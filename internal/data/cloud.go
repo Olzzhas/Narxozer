@@ -2,7 +2,7 @@ package data
 
 import (
 	"cloud.google.com/go/storage"
-	"github.com/olzzhas/narxoz-sport-hub/internal/image"
+	"github.com/olzzhas/narxozer/internal/image"
 )
 
 type Storages struct {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
-	"github.com/olzzhas/narxoz-sport-hub/internal/validator"
+	"github.com/olzzhas/narxozer/internal/validator"
 	"io"
 	"net/http"
 	"net/url"

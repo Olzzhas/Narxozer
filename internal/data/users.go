@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/olzzhas/narxoz-sport-hub/internal/validator"
+	"github.com/olzzhas/narxozer/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"

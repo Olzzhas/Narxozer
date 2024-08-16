@@ -6,12 +6,13 @@ import (
 	"database/sql"
 	"expvar"
 	"flag"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/olzzhas/narxoz-sport-hub/internal/data"
-	"github.com/olzzhas/narxoz-sport-hub/internal/jsonlog"
-	"github.com/olzzhas/narxoz-sport-hub/internal/mailer"
+	"github.com/olzzhas/narxozer/internal/data"
+	"github.com/olzzhas/narxozer/internal/jsonlog"
+	"github.com/olzzhas/narxozer/internal/mailer"
 	"log"
 	"os"
 	"runtime"
@@ -98,7 +99,8 @@ func main() {
 
 	redisClient, err := redisConnect()
 	if err != nil {
-		logger.PrintFatal(err, nil)
+		//logger.PrintFatal(err, nil)
+		fmt.Println("redis connection failed")
 	}
 
 	logger.PrintInfo("redis connection established", nil)

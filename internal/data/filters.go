@@ -1,7 +1,7 @@
 package data
 
 import (
-	"github.com/olzzhas/narxoz-sport-hub/internal/validator"
+	"github.com/olzzhas/narxozer/internal/validator"
 	"math"
 	"strings"
 )

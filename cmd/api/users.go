@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/olzzhas/narxoz-sport-hub/internal/data"
-	"github.com/olzzhas/narxoz-sport-hub/internal/image"
-	"github.com/olzzhas/narxoz-sport-hub/internal/validator"
+	"github.com/olzzhas/narxozer/internal/data"
+	"github.com/olzzhas/narxozer/internal/image"
+	"github.com/olzzhas/narxozer/internal/validator"
 	"net/http"
 	"time"
 )

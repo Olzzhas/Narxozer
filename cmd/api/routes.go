@@ -2,17 +2,20 @@ package main
 
 import (
 	"expvar"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/julienschmidt/httprouter"
+	"github.com/olzzhas/narxozer/graph"
+	"github.com/olzzhas/narxozer/graph/generated"
 	"net/http"
 )
 
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
-	router.NotFound = http.HandlerFunc(app.notFoundResponse)
-	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
-	//Health Check
-	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+	//GraphQL
+	router.Handler(http.MethodPost, "/query", handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})))
+	router.Handler(http.MethodGet, "/", playground.Handler("GraphQL playground", "/query"))
 
 	//User Routes
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)

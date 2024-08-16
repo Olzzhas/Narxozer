@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/olzzhas/narxoz-sport-hub/internal/data"
+	"github.com/olzzhas/narxozer/internal/data"
 	"net/http"
 )
 

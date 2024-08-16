@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"errors"
-	"github.com/olzzhas/narxoz-sport-hub/internal/validator"
+	"github.com/olzzhas/narxozer/internal/validator"
 	"time"
 )
 
