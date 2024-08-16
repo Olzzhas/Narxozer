@@ -2,11 +2,44 @@
 
 package model
 
+type Comment struct {
+	ID        string     `json:"id"`
+	Content   string     `json:"content"`
+	CreatedAt string     `json:"createdAt"`
+	Likes     int        `json:"likes"`
+	Replies   []*Comment `json:"replies"`
+}
+
+type CreateCommentInput struct {
+	PostID  string `json:"postId"`
+	Content string `json:"content"`
+}
+
+type CreatePostInput struct {
+	Title    string  `json:"title"`
+	Content  string  `json:"content"`
+	ImageURL *string `json:"imageURL,omitempty"`
+}
+
+type Mutation struct {
+}
+
+type Post struct {
+	ID        string     `json:"id"`
+	Title     string     `json:"title"`
+	Content   string     `json:"content"`
+	ImageURL  *string    `json:"imageURL,omitempty"`
+	CreatedAt string     `json:"createdAt"`
+	UpdatedAt *string    `json:"updatedAt,omitempty"`
+	Likes     int        `json:"likes"`
+	Comments  []*Comment `json:"comments"`
+}
+
 type Query struct {
 }
 
-type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+type UpdatePostInput struct {
+	Title    *string `json:"title,omitempty"`
+	Content  *string `json:"content,omitempty"`
+	ImageURL *string `json:"imageURL,omitempty"`
 }

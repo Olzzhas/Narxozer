@@ -1,10 +1,52 @@
 type Query {
-  healthCheck: String!
-  getUser(id: ID!): User
+  posts: [Post!]!
+  postById(id: ID!): Post
+  comments(postId: ID!): [Comment!]!
 }
 
-type User {
+type Mutation {
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
+  likePost(id: ID!): Post!
+
+  createComment(input: CreateCommentInput!): Comment!
+  likeComment(id: ID!): Comment!
+  replyToComment(commentId: ID!, input: CreateCommentInput!): Comment!
+}
+
+type Post {
   id: ID!
-  name: String!
-  email: String!
+  title: String!
+  content: String!
+  imageURL: String
+  createdAt: String!
+  updatedAt: String
+  likes: Int!
+  comments: [Comment!]!
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  createdAt: String!
+  likes: Int!
+  replies: [Comment!]!
+}
+
+input CreatePostInput {
+  title: String!
+  content: String!
+  imageURL: String
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+  imageURL: String
+}
+
+input CreateCommentInput {
+  postId: ID!
+  content: String!
 }

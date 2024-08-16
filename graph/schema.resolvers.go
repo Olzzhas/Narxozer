@@ -7,29 +7,66 @@ package graph
 import (
 	"context"
 	"fmt"
+
 	"github.com/olzzhas/narxozer/graph/generated"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
-// HealthCheck is the resolver for the healthCheck field.
-func (r *queryResolver) HealthCheck(ctx context.Context) (string, error) {
-	return "OK", nil
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
 }
 
-var UserDataStore = map[string]*model.User{
-	"1": {ID: "1", Name: "Olzhas Mukhanbetzhan", Email: "olzhas@gmail.com"},
-	"2": {ID: "2", Name: "Jandos Kazenov", Email: "jandoskazenov@gmail.com"},
+// UpdatePost is the resolver for the updatePost field.
+func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input model.UpdatePostInput) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: UpdatePost - updatePost"))
 }
 
-func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	user, exists := UserDataStore[id]
-	if !exists {
-		return nil, fmt.Errorf("user with ID %s not found", id)
-	}
-	return user, nil
+// DeletePost is the resolver for the deletePost field.
+func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeletePost - deletePost"))
 }
+
+// LikePost is the resolver for the likePost field.
+func (r *mutationResolver) LikePost(ctx context.Context, id string) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: LikePost - likePost"))
+}
+
+// CreateComment is the resolver for the createComment field.
+func (r *mutationResolver) CreateComment(ctx context.Context, input model.CreateCommentInput) (*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: CreateComment - createComment"))
+}
+
+// LikeComment is the resolver for the likeComment field.
+func (r *mutationResolver) LikeComment(ctx context.Context, id string) (*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: LikeComment - likeComment"))
+}
+
+// ReplyToComment is the resolver for the replyToComment field.
+func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID string, input model.CreateCommentInput) (*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: ReplyToComment - replyToComment"))
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	panic(fmt.Errorf("not implemented: Posts - posts"))
+}
+
+// PostByID is the resolver for the postById field.
+func (r *queryResolver) PostByID(ctx context.Context, id string) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: PostByID - postById"))
+}
+
+// Comments is the resolver for the comments field.
+func (r *queryResolver) Comments(ctx context.Context, postID string) ([]*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: Comments - comments"))
+}
+
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
