@@ -17,12 +17,36 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: migrate/migrate:v4.15.2
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: ["/bin/sh", "-c", "sleep 10 && migrate -path /migrations -database postgres://olzzhas:Olzhas040404@db:5432/narxozer?sslmode=disable up"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  seed:
+    image: postgres:14
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_DB: narxozer
+      POSTGRES_USER: olzzhas
+      POSTGRES_PASSWORD: Olzhas040404
+      PGPASSWORD: Olzhas040404
+    entrypoint: ["/bin/sh", "-c", "sleep 15 && psql -h db -U olzzhas -d narxozer -f /docker-entrypoint-initdb.d/seed.sql"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   app:
     build:
       context: .
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+      - migrate
+      - seed
     environment:
       DB_DSN: "postgres://olzzhas:Olzhas040404@db:5432/narxozer?sslmode=disable"
       PORT: 4000
@@ -31,4 +55,4 @@ services:
     command: ["sh", "-c", "sleep 10 && /narxozer"]
 
 volumes:
-  postgres_data:  # Определение тома
+  postgres_data:
