@@ -115,7 +115,8 @@ func main() {
 
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
-		log.Fatalf("failed to create client: %v", err)
+		//log.Fatalf("failed to create client: %v", err)
+		logger.PrintInfo("google storage connection failed", nil)
 	}
 
 	logger.PrintInfo("google storage connection established", nil)

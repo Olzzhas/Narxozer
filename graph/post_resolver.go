@@ -94,7 +94,12 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error)
 
 // LikePost is the resolver for the likePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, id int) (*model.Post, error) {
-	userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
+	//userID := middleware.GetUserIDFromContext(ctx)
+	//if userID == 0 {
+	//	return nil, fmt.Errorf("unauthorized")
+	//}
+
+	userID := 1
 
 	// Проверяем, не лайкнул ли уже этот пользователь данный пост
 	var existingLike int

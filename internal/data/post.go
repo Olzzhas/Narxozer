@@ -126,24 +126,20 @@ func (m PostModel) Delete(id int64) error {
 	return nil
 }
 
-func (m PostModel) CreateComment(comment *model.CreateCommentInput) (*model.Comment, error) {
+func (m PostModel) CreateComment(comment *model.Comment) (*model.Comment, error) {
 	query := `
-		INSERT INTO comments (post_id, content, author_id, created_at)
-		VALUES ($1, $2, $3, now())
-		RETURNING id, created_at`
+		INSERT INTO comments (post_id, parent_comment_id, content, author_id, created_at)
+		VALUES ($1, $2, $3, $4, now())
+		RETURNING id, comments.parent_comment_id, created_at`
 
-	var newComment model.Comment
-	args := []interface{}{comment.PostID, comment.Content, comment.AuthorID}
+	args := []interface{}{comment.PostID, comment.ParentID, comment.Content, comment.AuthorID}
 
-	err := m.DB.QueryRow(query, args...).Scan(&newComment.ID, &newComment.CreatedAt)
+	err := m.DB.QueryRow(query, args...).Scan(&comment.ID, &comment.ParentID, &comment.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 
-	newComment.Content = comment.Content
-	newComment.AuthorID = comment.AuthorID
-
-	return &newComment, nil
+	return comment, nil
 }
 
 func (m PostModel) DeleteComment(id int64) error {
@@ -177,7 +173,7 @@ func (m PostModel) UpdateComment(comment *model.Comment) error {
 
 func (m PostModel) FindAllComment(postID int64) ([]*model.Comment, error) {
 	query := `
-		SELECT id, post_id, content, author_id, created_at, updated_at, likes
+		SELECT id, post_id, parent_comment_id, content, author_id, created_at, updated_at, likes
 		FROM comments
 		WHERE post_id = $1`
 
@@ -193,6 +189,7 @@ func (m PostModel) FindAllComment(postID int64) ([]*model.Comment, error) {
 		err := rows.Scan(
 			&comment.ID,
 			&comment.PostID,
+			&comment.ParentID,
 			&comment.Content,
 			&comment.AuthorID,
 			&comment.CreatedAt,

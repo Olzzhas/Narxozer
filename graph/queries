@@ -99,3 +99,48 @@ mutation CreatePost{
 mutation DeletePost{
   deletePost(id: 3)
 }
+
+query{comments(postId: 3){
+  id
+  likes
+  content
+  authorId
+  parentId
+  postId
+  replies {
+    id
+  }
+  createdAt
+  updatedAt
+}}
+
+mutation {
+  replyToComment(commentId: 1,input: {
+    authorId: 2,
+    parentId:1,
+    postId: 3,
+    content: "Thanks! 4 comment"
+  }){
+    id
+    likes
+    content
+    authorId
+    parentId
+    createdAt
+  }
+}
+
+mutation{
+  likeComment(id: 1){
+    id
+    likes
+    authorId
+    parentId
+    postId
+    replies {
+      id
+    }
+    createdAt
+    updatedAt
+  }
+}
