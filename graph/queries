@@ -1,0 +1,101 @@
+query GetAllPosts {
+  posts {
+    id
+    title
+    content
+    imageURL
+    authorId
+    createdAt
+    updatedAt
+    likes
+    comments {
+      id
+      content
+      authorId
+      createdAt
+      updatedAt
+      likes
+      replies {
+        id
+        content
+        authorId
+        createdAt
+        updatedAt
+        likes
+      }
+    }
+  }
+}
+
+
+query GetPostById {
+  postById(id: 2) {
+    id
+    title
+    content
+    imageURL
+    authorId
+    createdAt
+    updatedAt
+    likes
+    comments {
+      id
+      content
+      authorId
+      createdAt
+      updatedAt
+      likes
+      replies {
+        id
+        content
+        authorId
+        createdAt
+        updatedAt
+        likes
+      }
+    }
+  }
+}
+
+query GetCommentsByPostId{
+  comments(postId: 2) {
+    id
+    content
+    postId
+    authorId
+    parentId
+    createdAt
+    updatedAt
+    likes
+    replies {
+      id
+      content
+      authorId
+      createdAt
+      updatedAt
+      likes
+    }
+  }
+}
+
+
+mutation CreatePost{
+  createPost(input: {
+    title: "New Post Title",
+    content: "Content of the new post",
+    imageURL: "http://example.com/image.png",
+    authorId: 1,
+  }) {
+    id
+    title
+    content
+    imageURL
+    authorId
+    createdAt
+    updatedAt
+  }
+}
+
+mutation DeletePost{
+  deletePost(id: 3)
+}

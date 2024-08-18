@@ -36,8 +36,11 @@ type Post {
 type Comment {
   id: ID!
   content: String!
+  postId: ID!
   authorId: ID!
+  parentId: ID
   createdAt: String!
+  updatedAt: String
   likes: Int!
   replies: [Comment!]!
 }
@@ -80,13 +83,14 @@ input CreateCommentInput {
   postId: ID!
   content: String!
   authorId: ID!
+  parentId: ID
 }
 
 input CreateUserInput {
   email: String!
   name: String!
   lastname: String!
-  password: String!  # hash
+  password: String!
   role: Role!
   imageURL: String
   additionalInformation: String
@@ -100,7 +104,7 @@ input UpdateUserInput {
   email: String
   name: String
   lastname: String
-  password: String  # hash
+  password: String
   role: Role
   imageURL: String
   additionalInformation: String

@@ -11,16 +11,20 @@ import (
 type Comment struct {
 	ID        string     `json:"id"`
 	Content   string     `json:"content"`
+	PostID    string     `json:"postId"`
 	AuthorID  string     `json:"authorId"`
+	ParentID  *string    `json:"parentId,omitempty"`
 	CreatedAt string     `json:"createdAt"`
+	UpdatedAt *string    `json:"updatedAt,omitempty"`
 	Likes     int        `json:"likes"`
 	Replies   []*Comment `json:"replies"`
 }
 
 type CreateCommentInput struct {
-	PostID   string `json:"postId"`
-	Content  string `json:"content"`
-	AuthorID string `json:"authorId"`
+	PostID   string  `json:"postId"`
+	Content  string  `json:"content"`
+	AuthorID string  `json:"authorId"`
+	ParentID *string `json:"parentId,omitempty"`
 }
 
 type CreatePostInput struct {

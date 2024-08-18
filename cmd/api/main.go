@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/olzzhas/narxozer/graph"
 	"github.com/olzzhas/narxozer/internal/data"
 	"github.com/olzzhas/narxozer/internal/jsonlog"
 	"github.com/olzzhas/narxozer/internal/mailer"
@@ -52,6 +53,7 @@ type application struct {
 	config   config
 	logger   *jsonlog.Logger
 	models   data.Models
+	resolver *graph.Resolver
 	redis    *redis.Client
 	storages data.Storages
 	mailer   mailer.Mailer
@@ -161,6 +163,7 @@ func main() {
 		config:   cfg,
 		logger:   logger,
 		models:   data.NewModels(db),
+		resolver: graph.NewResolver(data.NewModels(db), logger),
 		storages: data.NewStorages(storageClient),
 		redis:    redisClient,
 		mailer:   mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),

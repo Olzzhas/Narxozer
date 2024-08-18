@@ -5,7 +5,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/julienschmidt/httprouter"
-	"github.com/olzzhas/narxozer/graph"
 	"github.com/olzzhas/narxozer/graph/generated"
 	"net/http"
 )
@@ -14,7 +13,7 @@ func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
 	//GraphQL
-	router.Handler(http.MethodPost, "/query", handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})))
+	router.Handler(http.MethodPost, "/query", handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: app.resolver})))
 	router.Handler(http.MethodGet, "/", playground.Handler("GraphQL playground", "/query"))
 
 	//User Routes

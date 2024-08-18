@@ -1,7 +1,18 @@
 package graph
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
+import (
+	"github.com/olzzhas/narxozer/internal/data"
+	"github.com/olzzhas/narxozer/internal/jsonlog"
+)
 
-type Resolver struct{}
+type Resolver struct {
+	Models data.Models
+	Logger *jsonlog.Logger
+}
+
+func NewResolver(models data.Models, logger *jsonlog.Logger) *Resolver {
+	return &Resolver{
+		Models: models,
+		Logger: logger,
+	}
+}

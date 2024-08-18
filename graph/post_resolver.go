@@ -3,49 +3,104 @@ package graph
 import (
 	"context"
 	"github.com/olzzhas/narxozer/graph/model"
+	"github.com/vektah/gqlparser/v2/gqlerror"
+	"strconv"
 )
 
 // PostByID is the resolver for the postById field.
 func (r *queryResolver) PostByID(ctx context.Context, id string) (*model.Post, error) {
-	return &model.Post{}, nil
+	postID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, gqlerror.Errorf("invalid post ID")
+	}
+
+	post, err := r.Models.Posts.FindOne(postID)
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	if post == nil {
+		return nil, gqlerror.Errorf("post not found")
+	}
+
+	return post, nil
 }
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	posts, err := r.Models.Posts.FindAll()
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
 
-	return []*model.Post{}, nil
+	return posts, nil
 }
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error) {
-	post := &model.Post{
-		ID:        "some-generated-id", // Логика для генерации ID
-		Title:     input.Title,
-		Content:   input.Content,
-		AuthorID:  "some-generated-id",
-		ImageURL:  input.ImageURL,   // ImageURL может быть nil
-		CreatedAt: "some-timestamp", // Логика для установки времени
-		Likes:     0,
-		Comments:  []*model.Comment{},
+	post, err := r.Models.Posts.Insert(&input)
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
-
-	// Логика для сохранения поста
-	// Здесь должна быть реализация сохранения поста в базу данных
 
 	return post, nil
 }
 
 // UpdatePost is the resolver for the updatePost field.
 func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input model.UpdatePostInput) (*model.Post, error) {
-	// Логика для обновления поста
-	// Здесь должна быть реализация обновления поста в базе данных
-	return &model.Post{}, nil
+	postID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, gqlerror.Errorf("invalid post ID")
+	}
+
+	// Получаем пост, чтобы обновить его поля
+	post, err := r.Models.Posts.FindOne(postID)
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	if post == nil {
+		return nil, gqlerror.Errorf("post not found")
+	}
+
+	// Обновляем поля поста
+	if input.Title != nil {
+		post.Title = *input.Title
+	}
+	if input.Content != nil {
+		post.Content = *input.Content
+	}
+	if input.ImageURL != nil {
+		post.ImageURL = input.ImageURL
+	}
+
+	// Сохраняем обновления
+	err = r.Models.Posts.Update(post)
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	return post, nil
 }
 
 // DeletePost is the resolver for the deletePost field.
 func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
-	// Логика для удаления поста
-	// Здесь должна быть реализация удаления поста из базы данных
+	postID, err := strconv.ParseInt(id, 10, 64) // Преобразуем строку в int64
+	if err != nil {
+		return false, gqlerror.Errorf("invalid post ID")
+	}
+
+	err = r.Models.Posts.Delete(postID)
+	if err != nil {
+		r.Logger.PrintError(err, nil)
+		return false, gqlerror.Errorf("internal server error")
+	}
+
 	return true, nil
 }
 
