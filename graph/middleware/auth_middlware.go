@@ -2,19 +2,12 @@ package middleware
 
 import (
 	"context"
-	"github.com/olzzhas/narxozer/graph"
+	"github.com/olzzhas/narxozer/auth"
 	"net/http"
 	"strings"
 )
 
-type contextKey string
-
-const (
-	ContextUserID   contextKey = "user_id"
-	ContextUserRole contextKey = "role"
-)
-
-func AuthMiddleware(manager *graph.JWTManager) func(http.Handler) http.Handler {
+func AuthMiddleware(manager *auth.JWTManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -31,24 +24,23 @@ func AuthMiddleware(manager *graph.JWTManager) func(http.Handler) http.Handler {
 			}
 
 			// Добавляем UserID и Role в контекст запроса
-			ctx := context.WithValue(r.Context(), ContextUserID, claims.UserID)
-			ctx = context.WithValue(ctx, ContextUserRole, claims.Role)
+			ctx := context.WithValue(r.Context(), auth.ContextUserID, claims.UserID)
+			ctx = context.WithValue(ctx, auth.ContextUserRole, claims.Role)
 
-			// Передаем управление следующему обработчику
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func GetUserIDFromContext(ctx context.Context) int64 {
-	if userID, ok := ctx.Value(ContextUserID).(int64); ok {
+	if userID, ok := ctx.Value(auth.ContextUserID).(int64); ok {
 		return userID
 	}
 	return 0
 }
 
 func GetUserRoleFromContext(ctx context.Context) string {
-	if role, ok := ctx.Value(ContextUserRole).(string); ok {
+	if role, ok := ctx.Value(auth.ContextUserRole).(string); ok {
 		return role
 	}
 	return ""

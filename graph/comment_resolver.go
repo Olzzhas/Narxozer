@@ -2,16 +2,23 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, input model.CreateCommentInput) (*model.Comment, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, errors.New("unauthorized")
+	}
+
 	comment := &model.Comment{
 		Content:  input.Content,
 		PostID:   input.PostID,
-		AuthorID: input.AuthorID,
+		AuthorID: int(userID),
 		ParentID: input.ParentID,
 	}
 
@@ -25,10 +32,15 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 
 // ReplyToComment is the resolver for the replyToComment field.
 func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID int, input model.CreateCommentInput) (*model.Comment, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, errors.New("unauthorized")
+	}
+
 	reply := &model.Comment{
 		Content:  input.Content,
 		PostID:   input.PostID,
-		AuthorID: input.AuthorID,
+		AuthorID: int(userID),
 		ParentID: &commentID,
 		Replies:  []*model.Comment{},
 	}
@@ -53,7 +65,10 @@ func (r *queryResolver) Comments(ctx context.Context, postID int) ([]*model.Comm
 
 // LikeComment is the resolver for the likeComment field.
 func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comment, error) {
-	userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, fmt.Errorf("unauthorized")
+	}
 
 	// Проверяем, не лайкнул ли уже этот пользователь данный комментарий
 	var existingLike int
@@ -87,6 +102,5 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comm
 	}
 
 	return comment, nil
-
-	return nil, nil
+	
 }

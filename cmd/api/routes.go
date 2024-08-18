@@ -6,7 +6,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/julienschmidt/httprouter"
-	"github.com/olzzhas/narxozer/graph"
+	"github.com/olzzhas/narxozer/auth"
 	"github.com/olzzhas/narxozer/graph/generated"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"net/http"
@@ -16,25 +16,15 @@ import (
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
-	jwtManager := graph.NewJWTManager("your-secret-key", time.Hour)
-	protected := middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(ProtectedHandler))
+	jwtManager := auth.NewJWTManager("your-secret-key", time.Hour)
+	// all methods
+	protected := middleware.AuthMiddleware(jwtManager)(handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: app.resolver})))
 
-	router.Handler(http.MethodGet, "/protected", protected)
+	router.Handler(http.MethodPost, "/protected", protected)
 
-	//GraphQL
+
 	router.Handler(http.MethodPost, "/query", handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: app.resolver})))
 	router.Handler(http.MethodGet, "/", playground.Handler("GraphQL playground", "/query"))
-
-	////User Routes
-	//router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
-	//router.HandlerFunc(http.MethodGet, "/v1/users/:id", app.getUserById)
-	//router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
-	//router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
-	//router.HandlerFunc(http.MethodPost, "/v1/tokens/login", app.loginUserHandler)
-	//router.HandlerFunc(http.MethodDelete, "/v1/users/logout", app.logoutHandler)
-	//router.HandlerFunc(http.MethodPost, "/v1/users/refresh", app.refreshHandler)
-	//router.HandlerFunc(http.MethodPut, "/v1/users/update/:id", app.updateUserHandler)
-	//router.HandlerFunc(http.MethodPost, "/v1/users/image/:id", app.setProfileImageHandler)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 

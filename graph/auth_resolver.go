@@ -3,32 +3,13 @@ package graph
 import (
 	"context"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/olzzhas/narxozer/graph/model"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
-
-type JWTManager struct {
-	secretKey     string
-	tokenDuration time.Duration
-}
-
-type UserClaims struct {
-	jwt.StandardClaims
-	UserID int64  `json:"user_id"`
-	Role   string `json:"role"`
-}
-
-func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
-	return &JWTManager{
-		secretKey:     secretKey,
-		tokenDuration: tokenDuration,
-	}
-}
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.AuthPayload, error) {
+	// Проверка, существует ли пользователь с данным email
 	existingUser, err := r.Models.Users.GetByEmail(input.Email)
 	if err == nil && existingUser != nil {
 		return nil, errors.New("email already in use")
@@ -56,12 +37,12 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	}
 
 	// Генерация JWT токенов
-	accessToken, err := r.JWTManager.Generate(int64(user.ID), "STUDENT")
+	accessToken, err := r.JWTManager.Generate(int64(user.ID), user.Role.String())
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := r.JWTManager.GenerateRefresh(int64(user.ID), "STUDENT")
+	refreshToken, err := r.JWTManager.GenerateRefresh(int64(user.ID), user.Role.String())
 	if err != nil {
 		return nil, err
 	}
@@ -70,40 +51,6 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
-}
-
-func (manager *JWTManager) Generate(userID int64, role string) (string, error) {
-	claims := &UserClaims{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(manager.tokenDuration).Unix(),
-		},
-		UserID: userID,
-		Role:   role,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(manager.secretKey))
-}
-
-func (manager *JWTManager) Verify(accessToken string) (*UserClaims, error) {
-	token, err := jwt.ParseWithClaims(
-		accessToken,
-		&UserClaims{},
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte(manager.secretKey), nil
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := token.Claims.(*UserClaims)
-	if !ok {
-		return nil, err
-	}
-
-	return claims, nil
 }
 
 // Login is the resolver for the login field.
@@ -155,17 +102,4 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, refreshToken string
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken, // Используем старый Refresh токен
 	}, nil
-}
-
-func (manager *JWTManager) GenerateRefresh(userID int64, role string) (string, error) {
-	claims := &UserClaims{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
-		},
-		UserID: userID,
-		Role:   role,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(manager.secretKey))
 }

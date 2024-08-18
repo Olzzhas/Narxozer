@@ -2,7 +2,9 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -36,6 +38,11 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, errors.New("unauthorized")
+	}
+
 	post, err := r.Models.Posts.Insert(&input)
 	if err != nil {
 		r.Logger.PrintError(err, nil)
@@ -47,6 +54,10 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 
 // UpdatePost is the resolver for the updatePost field.
 func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.UpdatePostInput) (*model.Post, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, errors.New("unauthorized")
+	}
 
 	// Получаем пост, чтобы обновить его поля
 	post, err := r.Models.Posts.FindOne(int64(id))
@@ -82,6 +93,10 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 
 // DeletePost is the resolver for the deletePost field.
 func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return false, errors.New("unauthorized")
+	}
 
 	err := r.Models.Posts.Delete(int64(id))
 	if err != nil {
@@ -94,12 +109,10 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error)
 
 // LikePost is the resolver for the likePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, id int) (*model.Post, error) {
-	//userID := middleware.GetUserIDFromContext(ctx)
-	//if userID == 0 {
-	//	return nil, fmt.Errorf("unauthorized")
-	//}
-
-	userID := 1
+	userID := middleware.GetUserIDFromContext(ctx)
+	if userID == 0 {
+		return nil, fmt.Errorf("unauthorized")
+	}
 
 	// Проверяем, не лайкнул ли уже этот пользователь данный пост
 	var existingLike int
