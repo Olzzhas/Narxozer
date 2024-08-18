@@ -1,0 +1,10 @@
+FROM migrate/migrate:v4.15.2
+
+# Рабочая директория
+WORKDIR /migrations
+
+# Копируем миграции в контейнер
+COPY ./migrations /migrations
+
+# Команда по умолчанию, которая будет запускать миграции
+CMD ["-path", "/migrations", "-database", "postgres://myuser:mypassword@db:5432/mydatabase?sslmode=disable", "up"]
