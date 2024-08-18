@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/olzzhas/narxozer/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 	"log"
@@ -97,19 +98,19 @@ func ValidateUser(v *validator.Validator, user *User) {
 	}
 }
 
-func (m UserModel) Insert(user *User) error {
+func (m UserModel) Insert(user *model.User) error {
 	query := `
-		INSERT INTO users (name, surname, email, password_hash, activated, role, image_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, created_at, version, role
+		INSERT INTO users (name, lastname, email, password_hash, role)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, role
 	`
 
-	args := []any{user.Name, user.Surname, user.Email, user.Password.hash, user.Activated, "student", ""}
+	args := []any{user.Name, user.Lastname, user.Email, user.PasswordHash, user.Role}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version, &user.Role)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.Role)
 
 	if err != nil {
 		switch {
@@ -123,14 +124,14 @@ func (m UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (m UserModel) GetByEmail(email string) (*User, error) {
+func (m UserModel) GetByEmail(email string) (*model.User, error) {
 	query := `
-		SELECT id, created_at, name, surname, email, password_hash, activated, version, role, image_url, lfk_url, lfk_access
+		SELECT id,created_at,name,lastname,email,password_hash,role,image_url,degree, additional_information,major, course,faculty,updated_at
 		FROM users
 		WHERE email = $1
 	`
 
-	var user User
+	var user model.User
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -139,15 +140,17 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
-		&user.Surname,
+		&user.Lastname,
 		&user.Email,
-		&user.Password.hash,
-		&user.Activated,
-		&user.Version,
+		&user.PasswordHash,
 		&user.Role,
-		&user.ImageUrl,
-		&user.LFKUrl,
-		&user.LFKAccess,
+		&user.ImageURL,
+		&user.Degree,
+		&user.AdditionalInformation,
+		&user.Course,
+		&user.Major,
+		&user.Faculty,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {

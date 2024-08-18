@@ -39,3 +39,5 @@ build/api:
 	@echo 'Building cmd/api...'
 	go build -ldflags='-s' -o=./bin/api ./cmd/api
 
+#go run github.com/99designs/gqlgen generate
+

@@ -8,7 +8,7 @@ import (
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, input model.CreateCommentInput) (*model.Comment, error) {
 	comment := &model.Comment{
-		ID:        "some-generated-id", // Логика для генерации ID
+		ID:        999999, // Логика для генерации ID
 		Content:   input.Content,
 		CreatedAt: "some-timestamp", // Логика для установки времени
 		Likes:     0,
@@ -22,7 +22,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 }
 
 // LikeComment is the resolver for the likeComment field.
-func (r *mutationResolver) LikeComment(ctx context.Context, id string) (*model.Comment, error) {
+func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comment, error) {
 	//userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
 	//
 	//// Проверяем, не лайкнул ли уже этот пользователь данный комментарий
@@ -62,9 +62,9 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id string) (*model.C
 }
 
 // ReplyToComment is the resolver for the replyToComment field.
-func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID string, input model.CreateCommentInput) (*model.Comment, error) {
+func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID int, input model.CreateCommentInput) (*model.Comment, error) {
 	reply := &model.Comment{
-		ID:        "some-generated-id", // Логика для генерации ID
+		ID:        99999999, // Логика для генерации ID
 		Content:   input.Content,
 		CreatedAt: "some-timestamp", // Логика для установки времени
 		Likes:     0,
@@ -78,6 +78,6 @@ func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID string,
 }
 
 // Comments is the resolver for the comments field.
-func (r *queryResolver) Comments(ctx context.Context, postID string) ([]*model.Comment, error) {
+func (r *queryResolver) Comments(ctx context.Context, postID int) ([]*model.Comment, error) {
 	return []*model.Comment{}, nil
 }

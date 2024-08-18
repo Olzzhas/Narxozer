@@ -1,32 +1,36 @@
 type Query {
   posts: [Post!]!
-  postById(id: ID!): Post
-  comments(postId: ID!): [Comment!]!
+  postById(id: Int!): Post
+  comments(postId: Int!): [Comment!]!
   users: [User!]!
-  userById(id: ID!): User
+  userById(id: Int!): User
 }
 
 type Mutation {
   createPost(input: CreatePostInput!): Post!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
-  deletePost(id: ID!): Boolean!
-  likePost(id: ID!): Post!
+  updatePost(id: Int!, input: UpdatePostInput!): Post!
+  deletePost(id: Int!): Boolean!
+  likePost(id: Int!): Post!
 
   createComment(input: CreateCommentInput!): Comment!
-  likeComment(id: ID!): Comment!
-  replyToComment(commentId: ID!, input: CreateCommentInput!): Comment!
+  likeComment(id: Int!): Comment!
+  replyToComment(commentId: Int!, input: CreateCommentInput!): Comment!
 
   createUser(input: CreateUserInput!): User!
-  updateUser(id: ID!, input: UpdateUserInput!): User!
-  deleteUser(id: ID!): Boolean!
+  updateUser(id: Int!, input: UpdateUserInput!): User!
+  deleteUser(id: Int!): Boolean!
+
+  login(email: String!, password: String!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
+  refreshToken(refreshToken: String!): AuthPayload!
 }
 
 type Post {
-  id: ID!
+  id: Int!
   title: String!
   content: String!
   imageURL: String
-  authorId: ID!
+  authorId: Int!
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -34,11 +38,11 @@ type Post {
 }
 
 type Comment {
-  id: ID!
+  id: Int!
   content: String!
-  postId: ID!
-  authorId: ID!
-  parentId: ID
+  postId: Int!
+  authorId: Int!
+  parentId: Int
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -46,7 +50,7 @@ type Comment {
 }
 
 type User {
-  id: ID!
+  id: Int!
   email: String!
   name: String!
   lastname: String!
@@ -55,6 +59,8 @@ type User {
   imageURL: String
   additionalInformation: String
   course: Int
+  createdAt: String!
+  updatedAt: String
   major: String
   degree: String
   faculty: String
@@ -70,7 +76,7 @@ input CreatePostInput {
   title: String!
   content: String!
   imageURL: String
-  authorId: ID!
+  authorId: Int!
 }
 
 input UpdatePostInput {
@@ -80,10 +86,10 @@ input UpdatePostInput {
 }
 
 input CreateCommentInput {
-  postId: ID!
+  postId: Int!
   content: String!
-  authorId: ID!
-  parentId: ID
+  authorId: Int!
+  parentId: Int
 }
 
 input CreateUserInput {
@@ -112,4 +118,16 @@ input UpdateUserInput {
   major: String
   degree: String
   faculty: String
+}
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+}
+
+input RegisterInput {
+  email: String!
+  name: String!
+  lastname: String!
+  password: String!
 }

@@ -1,18 +1,13 @@
 package main
 
 import (
-	"errors"
 	"expvar"
 	"fmt"
 	"github.com/felixge/httpsnoop"
-	"github.com/olzzhas/narxozer/internal/data"
-	"github.com/olzzhas/narxozer/internal/validator"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -77,58 +72,58 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) authenticate(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Authorization")
-
-		authorizationHeader := r.Header.Get("Authorization")
-
-		if authorizationHeader == "" {
-			r = app.contextSetUser(r, data.AnonymousUser)
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		headerParts := strings.Split(authorizationHeader, " ")
-		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			app.invalidAuthenticationTokenResponse(w, r)
-			return
-		}
-
-		token := headerParts[1]
-
-		v := validator.New()
-
-		//if data.ValidateTokenPlaintext(v, token); !v.Valid() {
-		//	app.invalidCredentialsResponse(w, r)
-		//	return
-		//}
-
-		accessSecret := os.Getenv("ACCESS_SECRET")
-		claims, err := app.validateToken(token, accessSecret)
-		if !v.Valid() || err != nil {
-			app.invalidCredentialsResponse(w, r)
-			return
-		}
-
-		id := claims["user_id"].(float64)
-
-		user, err := app.models.Users.Get(int64(id))
-		if err != nil {
-			switch {
-			case errors.Is(err, data.ErrRecordNotFound):
-				app.invalidCredentialsResponse(w, r)
-			default:
-				app.serverErrorResponse(w, r, err)
-			}
-			return
-		}
-
-		r = app.contextSetUser(r, user)
-
-		next.ServeHTTP(w, r)
-	})
-}
+//func (app *application) authenticate(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		w.Header().Add("Vary", "Authorization")
+//
+//		authorizationHeader := r.Header.Get("Authorization")
+//
+//		if authorizationHeader == "" {
+//			r = app.contextSetUser(r, data.AnonymousUser)
+//			next.ServeHTTP(w, r)
+//			return
+//		}
+//
+//		headerParts := strings.Split(authorizationHeader, " ")
+//		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+//			app.invalidAuthenticationTokenResponse(w, r)
+//			return
+//		}
+//
+//		token := headerParts[1]
+//
+//		v := validator.New()
+//
+//		//if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+//		//	app.invalidCredentialsResponse(w, r)
+//		//	return
+//		//}
+//
+//		accessSecret := os.Getenv("ACCESS_SECRET")
+//		claims, err := app.validateToken(token, accessSecret)
+//		if !v.Valid() || err != nil {
+//			app.invalidCredentialsResponse(w, r)
+//			return
+//		}
+//
+//		id := claims["user_id"].(float64)
+//
+//		user, err := app.models.Users.Get(int64(id))
+//		if err != nil {
+//			switch {
+//			case errors.Is(err, data.ErrRecordNotFound):
+//				app.invalidCredentialsResponse(w, r)
+//			default:
+//				app.serverErrorResponse(w, r, err)
+//			}
+//			return
+//		}
+//
+//		r = app.contextSetUser(r, user)
+//
+//		next.ServeHTTP(w, r)
+//	})
+//}
 
 func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

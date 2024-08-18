@@ -8,12 +8,17 @@ import (
 	"strconv"
 )
 
+type AuthPayload struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 type Comment struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Content   string     `json:"content"`
-	PostID    string     `json:"postId"`
-	AuthorID  string     `json:"authorId"`
-	ParentID  *string    `json:"parentId,omitempty"`
+	PostID    int        `json:"postId"`
+	AuthorID  int        `json:"authorId"`
+	ParentID  *int       `json:"parentId,omitempty"`
 	CreatedAt string     `json:"createdAt"`
 	UpdatedAt *string    `json:"updatedAt,omitempty"`
 	Likes     int        `json:"likes"`
@@ -21,17 +26,17 @@ type Comment struct {
 }
 
 type CreateCommentInput struct {
-	PostID   string  `json:"postId"`
-	Content  string  `json:"content"`
-	AuthorID string  `json:"authorId"`
-	ParentID *string `json:"parentId,omitempty"`
+	PostID   int    `json:"postId"`
+	Content  string `json:"content"`
+	AuthorID int    `json:"authorId"`
+	ParentID *int   `json:"parentId,omitempty"`
 }
 
 type CreatePostInput struct {
 	Title    string  `json:"title"`
 	Content  string  `json:"content"`
 	ImageURL *string `json:"imageURL,omitempty"`
-	AuthorID string  `json:"authorId"`
+	AuthorID int     `json:"authorId"`
 }
 
 type CreateUserInput struct {
@@ -52,11 +57,11 @@ type Mutation struct {
 }
 
 type Post struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Title     string     `json:"title"`
 	Content   string     `json:"content"`
 	ImageURL  *string    `json:"imageURL,omitempty"`
-	AuthorID  string     `json:"authorId"`
+	AuthorID  int        `json:"authorId"`
 	CreatedAt string     `json:"createdAt"`
 	UpdatedAt *string    `json:"updatedAt,omitempty"`
 	Likes     int        `json:"likes"`
@@ -64,6 +69,13 @@ type Post struct {
 }
 
 type Query struct {
+}
+
+type RegisterInput struct {
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Lastname string `json:"lastname"`
+	Password string `json:"password"`
 }
 
 type UpdatePostInput struct {
@@ -87,7 +99,7 @@ type UpdateUserInput struct {
 }
 
 type User struct {
-	ID                    string  `json:"id"`
+	ID                    int     `json:"id"`
 	Email                 string  `json:"email"`
 	Name                  string  `json:"name"`
 	Lastname              string  `json:"lastname"`
@@ -96,6 +108,8 @@ type User struct {
 	ImageURL              *string `json:"imageURL,omitempty"`
 	AdditionalInformation *string `json:"additionalInformation,omitempty"`
 	Course                *int    `json:"course,omitempty"`
+	CreatedAt             string  `json:"createdAt"`
+	UpdatedAt             *string `json:"updatedAt,omitempty"`
 	Major                 *string `json:"major,omitempty"`
 	Degree                *string `json:"degree,omitempty"`
 	Faculty               *string `json:"faculty,omitempty"`

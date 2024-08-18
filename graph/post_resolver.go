@@ -5,17 +5,12 @@ import (
 	"fmt"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"strconv"
 )
 
 // PostByID is the resolver for the postById field.
-func (r *queryResolver) PostByID(ctx context.Context, id string) (*model.Post, error) {
-	postID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return nil, gqlerror.Errorf("invalid post ID")
-	}
+func (r *queryResolver) PostByID(ctx context.Context, id int) (*model.Post, error) {
 
-	post, err := r.Models.Posts.FindOne(postID)
+	post, err := r.Models.Posts.FindOne(int64(id))
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return nil, gqlerror.Errorf("internal server error")
@@ -51,14 +46,10 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 }
 
 // UpdatePost is the resolver for the updatePost field.
-func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input model.UpdatePostInput) (*model.Post, error) {
-	postID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return nil, gqlerror.Errorf("invalid post ID")
-	}
+func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.UpdatePostInput) (*model.Post, error) {
 
 	// Получаем пост, чтобы обновить его поля
-	post, err := r.Models.Posts.FindOne(postID)
+	post, err := r.Models.Posts.FindOne(int64(id))
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return nil, gqlerror.Errorf("internal server error")
@@ -90,13 +81,9 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input mode
 }
 
 // DeletePost is the resolver for the deletePost field.
-func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
-	postID, err := strconv.ParseInt(id, 10, 64) // Преобразуем строку в int64
-	if err != nil {
-		return false, gqlerror.Errorf("invalid post ID")
-	}
+func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error) {
 
-	err = r.Models.Posts.Delete(postID)
+	err := r.Models.Posts.Delete(int64(id))
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return false, gqlerror.Errorf("internal server error")
@@ -106,7 +93,7 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, err
 }
 
 // LikePost is the resolver for the likePost field.
-func (r *mutationResolver) LikePost(ctx context.Context, id string) (*model.Post, error) {
+func (r *mutationResolver) LikePost(ctx context.Context, id int) (*model.Post, error) {
 	userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
 
 	// Проверяем, не лайкнул ли уже этот пользователь данный пост
