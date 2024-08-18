@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"strconv"
@@ -106,40 +107,39 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, err
 
 // LikePost is the resolver for the likePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, id string) (*model.Post, error) {
-	//userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
-	//
-	//// Проверяем, не лайкнул ли уже этот пользователь данный пост
-	//var existingLike int
-	//err := r.DB.QueryRow("SELECT COUNT(*) FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'post'", userID, id).Scan(&existingLike)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//if existingLike > 0 {
-	//	return nil, fmt.Errorf("you have already liked this post")
-	//}
-	//
-	//// Добавляем лайк в таблицу likes
-	//_, err = r.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'post')", userID, id)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//// Увеличиваем счетчик лайков в таблице posts
-	//_, err = r.DB.Exec("UPDATE posts SET likes = likes + 1 WHERE id = $1", id)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//// Возвращаем обновленный пост
-	//post := &model.Post{}
-	//err = r.DB.QueryRow("SELECT id, title, content, image_url, created_at, updated_at, likes FROM posts WHERE id = $1", id).Scan(
-	//	&post.ID, &post.Title, &post.Content, &post.ImageURL, &post.CreatedAt, &post.UpdatedAt, &post.Likes)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//return post, nil
+	userID := 1 // Пример получения userID, вам нужно получить его из контекста или токена
 
-	return nil, nil
+	// Проверяем, не лайкнул ли уже этот пользователь данный пост
+	var existingLike int
+	err := r.Models.Posts.DB.QueryRow("SELECT COUNT(*) FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'post'", userID, id).Scan(&existingLike)
+	if err != nil {
+		return nil, err
+	}
+
+	if existingLike > 0 {
+		return nil, fmt.Errorf("you have already liked this post")
+	}
+
+	// Добавляем лайк в таблицу likes
+	_, err = r.Models.Posts.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'post')", userID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Увеличиваем счетчик лайков в таблице posts
+	_, err = r.Models.Posts.DB.Exec("UPDATE posts SET likes = likes + 1 WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Возвращаем обновленный пост
+	post := &model.Post{}
+	err = r.Models.Posts.DB.QueryRow("SELECT id, title, content, image_url, created_at, updated_at, likes FROM posts WHERE id = $1", id).Scan(
+		&post.ID, &post.Title, &post.Content, &post.ImageURL, &post.CreatedAt, &post.UpdatedAt, &post.Likes)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
+
 }
