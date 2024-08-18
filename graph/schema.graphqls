@@ -2,6 +2,8 @@ type Query {
   posts: [Post!]!
   postById(id: ID!): Post
   comments(postId: ID!): [Comment!]!
+  users: [User!]!
+  userById(id: ID!): User
 }
 
 type Mutation {
@@ -13,6 +15,10 @@ type Mutation {
   createComment(input: CreateCommentInput!): Comment!
   likeComment(id: ID!): Comment!
   replyToComment(commentId: ID!, input: CreateCommentInput!): Comment!
+
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
 }
 
 type Post {
@@ -20,6 +26,7 @@ type Post {
   title: String!
   content: String!
   imageURL: String
+  authorId: ID!
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -29,15 +36,38 @@ type Post {
 type Comment {
   id: ID!
   content: String!
+  authorId: ID!
   createdAt: String!
   likes: Int!
   replies: [Comment!]!
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String!
+  lastname: String!
+  passwordHash: String!
+  role: Role!
+  imageURL: String
+  additionalInformation: String
+  course: Int
+  major: String
+  degree: String
+  faculty: String
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
 }
 
 input CreatePostInput {
   title: String!
   content: String!
   imageURL: String
+  authorId: ID!
 }
 
 input UpdatePostInput {
@@ -49,4 +79,33 @@ input UpdatePostInput {
 input CreateCommentInput {
   postId: ID!
   content: String!
+  authorId: ID!
+}
+
+input CreateUserInput {
+  email: String!
+  name: String!
+  lastname: String!
+  password: String!  # hash
+  role: Role!
+  imageURL: String
+  additionalInformation: String
+  course: Int
+  major: String
+  degree: String
+  faculty: String
+}
+
+input UpdateUserInput {
+  email: String
+  name: String
+  lastname: String
+  password: String  # hash
+  role: Role
+  imageURL: String
+  additionalInformation: String
+  course: Int
+  major: String
+  degree: String
+  faculty: String
 }

@@ -23,11 +23,11 @@ db/migrations/new:
 ## db/migrations/up: apply all up database migrations
 db/migrations/up:
 	@echo 'Running up migrations...'
-	migrate -path='./migrations' -database='postgres://olzzhas:Olzhas040404@localhost/sport-hub?sslmode=disable' up
+	migrate -path='./migrations' -database='postgres://olzzhas:Olzhas040404@localhost/narxozer?sslmode=disable' up
 
 db/migrations/down:
 	@echo 'Running up migrations...'
-	migrate -path='./migrations' -database='postgres://olzzhas:Olzhas040404@localhost/sport-hub?sslmode=disable' down
+	migrate -path='./migrations' -database='postgres://olzzhas:Olzhas040404@localhost/narxozer?sslmode=disable' down
 
 
 # ==================================================================================== #
