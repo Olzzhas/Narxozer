@@ -11,7 +11,8 @@ CREATE TABLE posts (
 
 CREATE TABLE comments (
       id SERIAL PRIMARY KEY,
-      post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      entity_id INTEGER NOT NULL,
+        entity_type TEXT NOT NULL CHECK (entity_type IN ('post', 'topic')),
       content TEXT NOT NULL,
       author_id INT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

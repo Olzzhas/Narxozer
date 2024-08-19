@@ -13,23 +13,49 @@ type AuthPayload struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+type Club struct {
+	ID          int      `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	ImageURL    *string  `json:"imageURL,omitempty"`
+	Creator     *User    `json:"creator"`
+	CreatedAt   string   `json:"createdAt"`
+	Members     []*User  `json:"members"`
+	Events      []*Event `json:"events"`
+	Admins      []*User  `json:"admins"`
+}
+
 type Comment struct {
-	ID        int        `json:"id"`
-	Content   string     `json:"content"`
-	PostID    int        `json:"postId"`
-	AuthorID  int        `json:"authorId"`
-	ParentID  *int       `json:"parentId,omitempty"`
-	CreatedAt string     `json:"createdAt"`
-	UpdatedAt *string    `json:"updatedAt,omitempty"`
-	Likes     int        `json:"likes"`
-	Replies   []*Comment `json:"replies"`
+	ID         int        `json:"id"`
+	Content    string     `json:"content"`
+	EntityID   int        `json:"entityId"`
+	EntityType string     `json:"entityType"`
+	AuthorID   int        `json:"authorId"`
+	ParentID   *int       `json:"parentId,omitempty"`
+	CreatedAt  string     `json:"createdAt"`
+	UpdatedAt  *string    `json:"updatedAt,omitempty"`
+	Likes      int        `json:"likes"`
+	Replies    []*Comment `json:"replies"`
+}
+
+type CreateClubInput struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	ImageURL    *string `json:"imageURL,omitempty"`
 }
 
 type CreateCommentInput struct {
-	PostID   int    `json:"postId"`
-	Content  string `json:"content"`
-	AuthorID int    `json:"authorId"`
-	ParentID *int   `json:"parentId,omitempty"`
+	EntityID   int    `json:"entityID"`
+	EntityType string `json:"entityType"`
+	Content    string `json:"content"`
+	AuthorID   int    `json:"authorId"`
+	ParentID   *int   `json:"parentId,omitempty"`
+}
+
+type CreateEventInput struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Date        string `json:"date"`
 }
 
 type CreatePostInput struct {
@@ -37,6 +63,11 @@ type CreatePostInput struct {
 	Content  string  `json:"content"`
 	ImageURL *string `json:"imageURL,omitempty"`
 	AuthorID int     `json:"authorId"`
+}
+
+type CreateTopicInput struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 type CreateUserInput struct {
@@ -51,6 +82,15 @@ type CreateUserInput struct {
 	Major                 *string `json:"major,omitempty"`
 	Degree                *string `json:"degree,omitempty"`
 	Faculty               *string `json:"faculty,omitempty"`
+}
+
+type Event struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"createdAt"`
+	Date        string `json:"date"`
+	ClubID      int    `json:"clubId"`
 }
 
 type Mutation struct {
@@ -78,10 +118,44 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
+type Topic struct {
+	ID        int        `json:"id"`
+	Title     string     `json:"title"`
+	Content   string     `json:"content"`
+	AuthorID  int        `json:"authorId"`
+	CreatedAt string     `json:"createdAt"`
+	UpdatedAt *string    `json:"updatedAt,omitempty"`
+	Likes     int        `json:"likes"`
+	Comments  []*Comment `json:"comments"`
+}
+
+type UpdateClubInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	ImageURL    *string `json:"imageURL,omitempty"`
+}
+
+type UpdateCommentInput struct {
+	Content  string `json:"content"`
+	AuthorID int    `json:"authorId"`
+	ParentID *int   `json:"parentId,omitempty"`
+}
+
+type UpdateEventInput struct {
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Date        *string `json:"date,omitempty"`
+}
+
 type UpdatePostInput struct {
 	Title    *string `json:"title,omitempty"`
 	Content  *string `json:"content,omitempty"`
 	ImageURL *string `json:"imageURL,omitempty"`
+}
+
+type UpdateTopicInput struct {
+	Title   *string `json:"title,omitempty"`
+	Content *string `json:"content,omitempty"`
 }
 
 type UpdateUserInput struct {

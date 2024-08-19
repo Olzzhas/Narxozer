@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS clubs;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS club_members;
+DROP TABLE IF EXISTS club_admins;

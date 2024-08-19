@@ -16,10 +16,11 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 	}
 
 	comment := &model.Comment{
-		Content:  input.Content,
-		PostID:   input.PostID,
-		AuthorID: int(userID),
-		ParentID: input.ParentID,
+		Content:    input.Content,
+		EntityID:   input.EntityID,
+		EntityType: input.EntityType,
+		AuthorID:   int(userID),
+		ParentID:   input.ParentID,
 	}
 
 	comment, err := r.Models.Posts.CreateComment(comment)
@@ -38,11 +39,12 @@ func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID int, in
 	}
 
 	reply := &model.Comment{
-		Content:  input.Content,
-		PostID:   input.PostID,
-		AuthorID: int(userID),
-		ParentID: &commentID,
-		Replies:  []*model.Comment{},
+		Content:    input.Content,
+		EntityType: input.EntityType,
+		EntityID:   input.EntityID,
+		AuthorID:   int(userID),
+		ParentID:   &commentID,
+		Replies:    []*model.Comment{},
 	}
 
 	reply, err := r.Models.Posts.CreateComment(reply)
@@ -102,5 +104,5 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comm
 	}
 
 	return comment, nil
-	
+
 }

@@ -4,6 +4,13 @@ type Query {
   comments(postId: Int!): [Comment!]!
   users: [User!]!
   userById(id: Int!): User
+
+  clubs: [Club!]!
+  clubById(id: Int!): Club
+
+  topics: [Topic!]!
+  topicById(id: Int!): Topic
+  commentsByTopicId(topicId: Int!): [Comment!]!
 }
 
 type Mutation {
@@ -23,6 +30,91 @@ type Mutation {
   login(email: String!, password: String!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
   refreshToken(refreshToken: String!): AuthPayload!
+
+  joinClub(clubId: Int!): Club!
+  leaveClub(clubId: Int!): Club!
+  createClub(input: CreateClubInput!): Club!
+  updateClub(id: Int!, input: UpdateClubInput!): Club!
+  deleteClub(id: Int!): Boolean!
+
+  createEvent(clubId: Int!, input: CreateEventInput!): Event!
+  updateEvent(id: Int!, input: UpdateEventInput!): Event!
+  deleteEvent(id: Int!): Boolean!
+
+  createTopic(input: CreateTopicInput!): Topic!
+  updateTopic(id: Int!, input: UpdateTopicInput!): Topic!
+  deleteTopic(id: Int!): Boolean!
+  likeTopic(id: Int!): Topic!
+  updateComment(id: Int!, input: UpdateCommentInput!): Comment!
+  deleteComment(id: Int!): Boolean!
+
+}
+
+type Topic {
+  id: Int!
+  title: String!
+  content: String!
+  authorId: Int!
+  createdAt: String!
+  updatedAt: String
+  likes: Int!
+  comments: [Comment!]!
+}
+
+input CreateTopicInput {
+  title: String!
+  content: String!
+}
+
+
+input UpdateTopicInput {
+  title: String
+  content: String
+}
+
+type Club {
+  id: Int!
+  name: String!
+  description: String!
+  imageURL: String
+  creator: User!
+  createdAt: String!
+  members: [User!]!
+  events: [Event!]!
+  admins: [User!]!
+}
+
+type Event {
+  id: Int!
+  title: String!
+  description: String!
+  createdAt: String!
+  date: String!
+  clubId: Int!
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  date: String
+}
+input CreateClubInput {
+  name: String!
+  description: String!
+  imageURL: String
+}
+
+input UpdateClubInput {
+  name: String
+  description: String
+  imageURL: String
+}
+
+
+input CreateEventInput {
+  title: String!
+  description: String!
+  date: String!
 }
 
 type Post {
@@ -40,7 +132,8 @@ type Post {
 type Comment {
   id: Int!
   content: String!
-  postId: Int!
+  entityId: Int!
+  entityType: String!
   authorId: Int!
   parentId: Int
   createdAt: String!
@@ -86,7 +179,14 @@ input UpdatePostInput {
 }
 
 input CreateCommentInput {
-  postId: Int!
+  entityID: Int!
+  entityType: String!
+  content: String!
+  authorId: Int!
+  parentId: Int
+}
+
+input UpdateCommentInput{
   content: String!
   authorId: Int!
   parentId: Int
@@ -131,3 +231,5 @@ input RegisterInput {
   lastname: String!
   password: String!
 }
+
+

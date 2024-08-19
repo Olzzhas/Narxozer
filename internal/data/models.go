@@ -16,6 +16,10 @@ type Models struct {
 	Tokens              TokenModel
 	AuthorizationTokens AuthorizationTokenModel
 	Posts               PostModel
+	Clubs               ClubModel
+	Events              EventModel
+	Topics              TopicModel
+	Comments            CommentModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -25,5 +29,9 @@ func NewModels(db *sql.DB) Models {
 		Tokens:              TokenModel{DB: db},
 		AuthorizationTokens: AuthorizationTokenModel{DB: db},
 		Posts:               PostModel{DB: db},
+		Clubs:               ClubModel{DB: db},
+		Events:              EventModel{DB: db},
+		Topics:              TopicModel{DB: db},
+		Comments:            CommentModel{DB: db},
 	}
 }
