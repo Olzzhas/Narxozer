@@ -100,6 +100,34 @@ func ValidateUser(v *validator.Validator, user *User) {
 	}
 }
 
+func (m UserModel) Insert(user *model.User) error {
+	query := `
+		INSERT INTO users (email, name, lastname, password_hash, role, image_url, additional_information, course, major, degree, faculty)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id, created_at, updated_at`
+
+	args := []interface{}{
+		user.Email,
+		user.Name,
+		user.Lastname,
+		user.PasswordHash,
+		user.Role,
+		user.ImageURL,
+		user.AdditionalInformation,
+		user.Course,
+		user.Major,
+		user.Degree,
+		user.Faculty,
+	}
+
+	err := m.DB.QueryRow(query, args...).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m UserModel) GetAll() ([]*model.User, error) {
 	query := `
 		SELECT id, email, name, lastname, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
@@ -176,6 +204,41 @@ func (m UserModel) Get(id int) (*model.User, error) {
 	return &user, nil
 }
 
+func (m UserModel) GetByEmail(email string) (*model.User, error) {
+	query := `
+		SELECT id, email, name, lastname, password_hash, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
+		FROM users
+		WHERE email = $1`
+
+	var user model.User
+
+	err := m.DB.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Name,
+		&user.Lastname,
+		&user.PasswordHash,
+		&user.Role,
+		&user.ImageURL,
+		&user.AdditionalInformation,
+		&user.Course,
+		&user.Major,
+		&user.Degree,
+		&user.Faculty,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (m ClubModel) Update(id int, input model.UpdateClubInput) (*model.Club, error) {
 	query := `
 		UPDATE clubs
@@ -184,6 +247,7 @@ func (m ClubModel) Update(id int, input model.UpdateClubInput) (*model.Club, err
 		RETURNING id, name, description, image_url, creator_id, created_at`
 
 	club := &model.Club{}
+	club.Creator = &model.User{}
 	err := m.DB.QueryRow(query, input.Name, input.Description, input.ImageURL, id).Scan(
 		&club.ID, &club.Name, &club.Description, &club.ImageURL, &club.Creator.ID, &club.CreatedAt)
 	if err != nil {

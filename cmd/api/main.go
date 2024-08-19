@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/olzzhas/narxozer/auth"
 	"github.com/olzzhas/narxozer/graph"
 	"github.com/olzzhas/narxozer/internal/data"
 	"github.com/olzzhas/narxozer/internal/jsonlog"
@@ -50,14 +51,15 @@ type config struct {
 }
 
 type application struct {
-	config   config
-	logger   *jsonlog.Logger
-	models   data.Models
-	resolver *graph.Resolver
-	redis    *redis.Client
-	storages data.Storages
-	mailer   mailer.Mailer
-	wg       sync.WaitGroup
+	config     config
+	logger     *jsonlog.Logger
+	jwtManager *auth.JWTManager
+	models     data.Models
+	resolver   *graph.Resolver
+	redis      *redis.Client
+	storages   data.Storages
+	mailer     mailer.Mailer
+	wg         sync.WaitGroup
 }
 
 func main() {
@@ -160,14 +162,22 @@ func main() {
 		return time.Now().Unix()
 	}))
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		logger.PrintFatal(fmt.Errorf("jwt secret isn't provided"), nil)
+	}
+
+	jwtManager := auth.NewJWTManager(jwtSecret, 24*time.Hour)
+
 	app := &application{
-		config:   cfg,
-		logger:   logger,
-		models:   data.NewModels(db),
-		resolver: graph.NewResolver(data.NewModels(db), logger),
-		storages: data.NewStorages(storageClient),
-		redis:    redisClient,
-		mailer:   mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
+		config:     cfg,
+		logger:     logger,
+		jwtManager: jwtManager,
+		models:     data.NewModels(db),
+		resolver:   graph.NewResolver(data.NewModels(db), logger),
+		storages:   data.NewStorages(storageClient),
+		redis:      redisClient,
+		mailer:     mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()

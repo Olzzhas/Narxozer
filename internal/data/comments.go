@@ -16,7 +16,7 @@ func (m CommentModel) Insert(comment *model.Comment) (*model.Comment, error) {
 		RETURNING id, created_at
 	`
 
-	args := []interface{}{comment.Content, comment.ImageURL, comment.EntityID, comment.EntityType, comment.ParentID}
+	args := []interface{}{comment.Content, comment.ImageURL, comment.EntityID, comment.EntityType, comment.Author.ID, comment.ParentID}
 
 	err := m.DB.QueryRow(query, args...).Scan(&comment.ID, &comment.CreatedAt)
 	if err != nil {

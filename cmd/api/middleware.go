@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"expvar"
 	"fmt"
 	"github.com/felixge/httpsnoop"
+	"github.com/olzzhas/narxozer/auth"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -186,5 +189,27 @@ func (app *application) metrics(next http.Handler) http.Handler {
 		totalProcessingTimeMicroseconds.Add(metrics.Duration.Microseconds())
 
 		totalResponsesSentByStatus.Add(strconv.Itoa(metrics.Code), 1)
+	})
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims, err := app.jwtManager.Verify(tokenString)
+		if err != nil {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), auth.ContextUserID, claims.UserID)
+		ctx = context.WithValue(ctx, auth.ContextUserRole, claims.Role)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

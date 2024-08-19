@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
@@ -12,7 +13,7 @@ type ClubModel struct {
 
 func (m ClubModel) Insert(club *model.Club, id int) (*model.Club, error) {
 	query := `
-		INSERT INTO clubs (name, description, image_url, creator)
+		INSERT INTO clubs (name, description, image_url, creator_id)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
 	`
@@ -64,6 +65,43 @@ func (m ClubModel) GetAll() ([]*model.Club, error) {
 	return clubs, nil
 }
 
+func (m ClubModel) GetMembers(clubID int) ([]*model.User, error) {
+	query := `
+		SELECT u.id, u.email, u.name, u.lastname, u.image_url
+		FROM club_members cm
+		JOIN users u ON cm.user_id = u.id
+		WHERE cm.club_id = $1
+	`
+
+	rows, err := m.DB.Query(query, clubID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []*model.User
+	for rows.Next() {
+		var member model.User
+		err := rows.Scan(
+			&member.ID,
+			&member.Email,
+			&member.Name,
+			&member.Lastname,
+			&member.ImageURL,
+		)
+		if err != nil {
+			return nil, err
+		}
+		members = append(members, &member)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
 func (m ClubModel) GetByID(id int) (*model.Club, error) {
 	query := `
 		SELECT id, name, description, image_url, creator_id, created_at
@@ -82,7 +120,7 @@ func (m ClubModel) GetByID(id int) (*model.Club, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Пост не найден
+			return nil, nil // Клуб не найден
 		}
 		return nil, err
 	}
@@ -96,26 +134,43 @@ func (m ClubModel) AddMember(clubID, userID int) error {
 		VALUES ($1, $2)
 	`
 
-	err := m.DB.QueryRow(query, clubID, userID)
+	_, err := m.DB.Exec(query, clubID, userID)
 	if err != nil {
-		return fmt.Errorf("error occured while writing data into db: %v", err)
+		// Приведение ошибки к типу pq.Error
+		if pqErr, ok := err.(*pq.Error); ok {
+			// Проверка ошибки на дублирование данных
+			if pqErr.Code == "23505" { // 23505 - код ошибки уникальности в PostgreSQL
+				return fmt.Errorf("user is already a member of the club")
+			}
+		}
+		return fmt.Errorf("error occurred while writing data into db: %v", err)
 	}
 
 	return nil
 }
 
-func (m ClubModel) RemoveMember(clubID int, userID int) error {
+func (m ClubModel) RemoveMember(clubID int, userID int) (bool, error) {
 	query := `
 		DELETE FROM club_members 
 		WHERE club_id = $1 and user_id = $2
 	`
 
-	err := m.DB.QueryRow(query, clubID, userID)
+	result, err := m.DB.Exec(query, clubID, userID)
 	if err != nil {
-		return fmt.Errorf("error occured while deleting data from db: %v", err)
+		return false, fmt.Errorf("error occured while deleting data from db: %v", err)
 	}
 
-	return nil
+	// Проверяем, была ли удалена хоть одна строка
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("error occured while checking affected rows: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		return false, fmt.Errorf("no rows affected, the member might not exist in the club")
+	}
+
+	return true, nil
 }
 
 func (m ClubModel) IsAdmin(clubId, userId int) bool {

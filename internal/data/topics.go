@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
@@ -49,11 +50,23 @@ func (m TopicModel) GetAll() ([]*model.Topic, error) {
 
 // GetByID возвращает топик по его ID
 func (m TopicModel) GetByID(id int) (*model.Topic, error) {
-	query := `SELECT id, title, content, image_url, author_id, created_at, updated_at FROM topics WHERE id = $1`
+	query := `
+		SELECT id, title, content, image_url, author_id, created_at, updated_at, likes
+		FROM topics 
+		WHERE id = $1`
 	topic := &model.Topic{}
 	topic.Author = &model.User{}
-	err := m.DB.QueryRow(query, id).Scan(&topic.ID, &topic.Title, &topic.Content, &topic.ImageURL, &topic.Author.ID, &topic.CreatedAt, &topic.UpdatedAt)
-	if err == sql.ErrNoRows {
+	err := m.DB.QueryRow(query, id).Scan(
+		&topic.ID,
+		&topic.Title,
+		&topic.Content,
+		&topic.ImageURL,
+		&topic.Author.ID,
+		&topic.CreatedAt,
+		&topic.UpdatedAt,
+		&topic.Likes, // Добавлено поле likes
+	)
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

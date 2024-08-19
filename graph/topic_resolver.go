@@ -65,6 +65,14 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id int, input model.
 		return nil, err
 	}
 
+	// TODO redis
+	user, err := r.Models.Users.Get(int(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	updatedTopic.Author = user
+
 	return updatedTopic, nil
 }
 
@@ -110,30 +118,43 @@ func (r *mutationResolver) LikeTopic(ctx context.Context, id int) (*model.Topic,
 		return nil, err
 	}
 
+	tx, err := r.Models.Posts.DB.Begin() // Начало транзакции
+	if err != nil {
+		return nil, err
+	}
+
 	if existingLike > 0 {
 		// Лайк уже существует, выполняем анлайк
-		_, err = r.Models.Posts.DB.Exec("DELETE FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'topic'", userID, id)
+		_, err = tx.Exec("DELETE FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'topic'", userID, id)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 
-		// Уменьшаем счетчик лайков в таблице topics
-		_, err = r.Models.Posts.DB.Exec("UPDATE topics SET likes = likes - 1 WHERE id = $1", id)
+		// Уменьшаем счетчик лайков в таблице topics, убедившись, что он не станет отрицательным
+		_, err = tx.Exec("UPDATE topics SET likes = GREATEST(likes - 1, 0) WHERE id = $1", id)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 	} else {
 		// Лайка нет, выполняем добавление лайка
-		_, err = r.Models.Posts.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'topic')", userID, id)
+		_, err = tx.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'topic')", userID, id)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 
 		// Увеличиваем счетчик лайков в таблице topics
-		_, err = r.Models.Posts.DB.Exec("UPDATE topics SET likes = likes + 1 WHERE id = $1", id)
+		_, err = tx.Exec("UPDATE topics SET likes = likes + 1 WHERE id = $1", id)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
+	}
+
+	if err = tx.Commit(); err != nil { // Завершение транзакции
+		return nil, err
 	}
 
 	// Возвращаем обновленный топик
@@ -141,6 +162,14 @@ func (r *mutationResolver) LikeTopic(ctx context.Context, id int) (*model.Topic,
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO redis
+	user, err := r.Models.Users.Get(int(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	topic.Author = user
 
 	return topic, nil
 }

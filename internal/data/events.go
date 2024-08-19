@@ -12,7 +12,7 @@ type EventModel struct {
 func (m EventModel) Insert(event *model.Event) (*model.Event, error) {
 	query := `
 		INSERT INTO events (title, description, date, club_id, image_url)
-		VALUES ($1, $2, $3, $4)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at
 	`
 

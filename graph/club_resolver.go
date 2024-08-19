@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // JoinClub is the resolver for the joinClub field.
@@ -22,18 +23,28 @@ func (r *mutationResolver) JoinClub(ctx context.Context, clubID int) (*model.Clu
 	return r.Models.Clubs.GetByID(clubID)
 }
 
-// LeaveClub is the resolver for the leaveClub field.
 func (r *mutationResolver) LeaveClub(ctx context.Context, clubID int) (*model.Club, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 	if userID == 0 {
 		return nil, errors.New("unauthorized")
 	}
 
-	err := r.Models.Clubs.RemoveMember(clubID, int(userID))
+	success, err := r.Models.Clubs.RemoveMember(clubID, int(userID))
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+
+	if !success {
+		return nil, errors.New("failed to remove member from club")
+	}
+
+	// TODO redis
+	club, err := r.Models.Clubs.GetByID(clubID)
+	if err != nil {
+		return nil, err
+	}
+
+	return club, nil
 }
 
 // CreateClub is the resolver for the createClub field.
@@ -138,6 +149,15 @@ func (r *queryResolver) Clubs(ctx context.Context) ([]*model.Club, error) {
 	if err != nil {
 		return nil, err
 	}
+	for _, club := range clubs {
+		// TODO redis
+		members, err := r.Models.Clubs.GetMembers(club.ID)
+		if err != nil {
+			return nil, gqlerror.Errorf("internal server error")
+		}
+		club.Members = members
+	}
+
 	return clubs, nil
 }
 
@@ -147,7 +167,16 @@ func (r *queryResolver) ClubByID(ctx context.Context, id int) (*model.Club, erro
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO redis
+	members, err := r.Models.Clubs.GetMembers(club.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	club.Members = members
 	return club, nil
+
 }
 
 // AssignAdmin is the resolver for the assignAdmin field.
