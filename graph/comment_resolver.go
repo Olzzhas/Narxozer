@@ -17,16 +17,25 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 
 	comment := &model.Comment{
 		Content:    input.Content,
+		ImageURL:   input.ImageURL,
 		EntityID:   input.EntityID,
-		EntityType: input.EntityType,
-		AuthorID:   int(userID),
+		EntityType: input.EntityType.String(),
+		Author:     &model.User{ID: int(userID)},
 		ParentID:   input.ParentID,
 	}
 
-	comment, err := r.Models.Posts.CreateComment(comment)
+	comment, err := r.Models.Comments.Insert(comment)
 	if err != nil {
 		return nil, err
 	}
+
+	//TODO redis
+	user, err := r.Models.Users.Get(comment.Author.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	comment.Author = user
 
 	return comment, nil
 }
@@ -38,26 +47,36 @@ func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID int, in
 		return nil, errors.New("unauthorized")
 	}
 
-	reply := &model.Comment{
+	comment := &model.Comment{
 		Content:    input.Content,
-		EntityType: input.EntityType,
+		ImageURL:   input.ImageURL,
 		EntityID:   input.EntityID,
-		AuthorID:   int(userID),
+		EntityType: input.EntityType.String(),
+		Author:     &model.User{ID: int(userID)},
 		ParentID:   &commentID,
-		Replies:    []*model.Comment{},
 	}
 
-	reply, err := r.Models.Posts.CreateComment(reply)
+	comment, err := r.Models.Comments.Insert(comment)
 	if err != nil {
 		return nil, err
 	}
 
-	return reply, nil
+	//TODO redis
+	user, err := r.Models.Users.Get(comment.Author.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	comment.Author = user
+
+	return comment, nil
 }
 
 // Comments is the resolver for the comments field.
 func (r *queryResolver) Comments(ctx context.Context, postID int) ([]*model.Comment, error) {
-	comments, err := r.Models.Posts.FindAllComment(int64(postID))
+
+	// TODO redis
+	comments, err := r.Models.Comments.GetAllByPost(postID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,19 +99,39 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comm
 	}
 
 	if existingLike > 0 {
-		return nil, fmt.Errorf("you have already liked this comment")
+		// Если пользователь уже лайкнул комментарий, удаляем лайк (unlike)
+		_, err := r.Models.Posts.DB.Exec("DELETE FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'comment'", userID, id)
+		if err != nil {
+			return nil, fmt.Errorf("internal server error")
+		}
+
+		// Уменьшаем счетчик лайков в таблице comments
+		_, err = r.Models.Posts.DB.Exec("UPDATE comments SET likes = likes - 1 WHERE id = $1", id)
+		if err != nil {
+			return nil, fmt.Errorf("internal server error")
+		}
+
+		// Возвращаем обновленный комментарий
+		comment := &model.Comment{}
+		err = r.Models.Posts.DB.QueryRow("SELECT id, content, created_at, likes FROM comments WHERE id = $1", id).Scan(
+			&comment.ID, &comment.Content, &comment.CreatedAt, &comment.Likes)
+		if err != nil {
+			return nil, err
+		}
+
+		return comment, nil
 	}
 
 	// Добавляем лайк в таблицу likes
 	_, err = r.Models.Posts.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'comment')", userID, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("internal server error")
 	}
 
 	// Увеличиваем счетчик лайков в таблице comments
 	_, err = r.Models.Posts.DB.Exec("UPDATE comments SET likes = likes + 1 WHERE id = $1", id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("internal server error")
 	}
 
 	// Возвращаем обновленный комментарий
@@ -100,9 +139,18 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id int) (*model.Comm
 	err = r.Models.Posts.DB.QueryRow("SELECT id, content, created_at, likes FROM comments WHERE id = $1", id).Scan(
 		&comment.ID, &comment.Content, &comment.CreatedAt, &comment.Likes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("internal server error")
 	}
 
 	return comment, nil
+}
 
+// UpdateComment is the resolver for the updateComment field.
+func (r *mutationResolver) UpdateComment(ctx context.Context, id int, input model.UpdateCommentInput) (*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: UpdateComment - updateComment"))
+}
+
+// DeleteComment is the resolver for the deleteComment field.
+func (r *mutationResolver) DeleteComment(ctx context.Context, id int) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeleteComment - deleteComment"))
 }

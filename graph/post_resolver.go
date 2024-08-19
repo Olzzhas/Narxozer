@@ -22,6 +22,14 @@ func (r *queryResolver) PostByID(ctx context.Context, id int) (*model.Post, erro
 		return nil, gqlerror.Errorf("post not found")
 	}
 
+	// TODO redis
+	user, err := r.Models.Users.Get(post.Author.ID)
+	if err != nil {
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	post.Author = user
+
 	return post, nil
 }
 
@@ -29,8 +37,18 @@ func (r *queryResolver) PostByID(ctx context.Context, id int) (*model.Post, erro
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	posts, err := r.Models.Posts.FindAll()
 	if err != nil {
-		r.Logger.PrintError(err, nil)
+		r.Logger.PrintError(fmt.Errorf("error while getting posts: %v", err), nil)
 		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	for _, post := range posts {
+		//TODO redis
+		user, err := r.Models.Users.Get(post.Author.ID)
+		if err != nil {
+			r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+			return nil, gqlerror.Errorf("internal server error")
+		}
+		post.Author = user
 	}
 
 	return posts, nil
@@ -43,11 +61,26 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 		return nil, errors.New("unauthorized")
 	}
 
-	post, err := r.Models.Posts.Insert(&input)
+	temp := model.Post{
+		Title:    input.Title,
+		Content:  input.Content,
+		ImageURL: input.ImageURL,
+		Author:   &model.User{ID: int(userID)},
+	}
+
+	post, err := r.Models.Posts.Insert(&temp)
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return nil, gqlerror.Errorf("internal server error")
 	}
+
+	//TODO redis
+	user, err := r.Models.Users.Get(post.Author.ID)
+	if err != nil {
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	post.Author = user
 
 	return post, nil
 }
@@ -70,7 +103,6 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 		return nil, gqlerror.Errorf("post not found")
 	}
 
-	// Обновляем поля поста
 	if input.Title != nil {
 		post.Title = *input.Title
 	}
@@ -81,12 +113,19 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 		post.ImageURL = input.ImageURL
 	}
 
-	// Сохраняем обновления
 	err = r.Models.Posts.Update(post)
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return nil, gqlerror.Errorf("internal server error")
 	}
+
+	//TODO redis
+	user, err := r.Models.Users.Get(post.Author.ID)
+	if err != nil {
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	post.Author = user
 
 	return post, nil
 }
@@ -98,7 +137,27 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error)
 		return false, errors.New("unauthorized")
 	}
 
-	err := r.Models.Posts.Delete(int64(id))
+	// TODO redis
+	post, err := r.Models.Posts.FindOne(int64(id))
+	if err != nil {
+		return false, gqlerror.Errorf("internal server error")
+	}
+
+	if post == nil {
+		return false, gqlerror.Errorf("post not found")
+	}
+
+	//TODO redis
+	user, err := r.Models.Users.Get(int(userID))
+	if err != nil {
+		return false, gqlerror.Errorf("internal server error")
+	}
+
+	if post.Author.ID != int(userID) && user.Role != model.RoleAdmin {
+		return false, gqlerror.Errorf("you have no permission to delete this post")
+	}
+
+	err = r.Models.Posts.Delete(int64(id))
 	if err != nil {
 		r.Logger.PrintError(err, nil)
 		return false, gqlerror.Errorf("internal server error")
@@ -122,7 +181,27 @@ func (r *mutationResolver) LikePost(ctx context.Context, id int) (*model.Post, e
 	}
 
 	if existingLike > 0 {
-		return nil, fmt.Errorf("you have already liked this post")
+		// Если пользователь уже лайкнул пост, удаляем лайк (unlike)
+		_, err := r.Models.Posts.DB.Exec("DELETE FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'post'", userID, id)
+		if err != nil {
+			return nil, gqlerror.Errorf("internal server error")
+		}
+
+		// Уменьшаем счетчик лайков в таблице posts
+		_, err = r.Models.Posts.DB.Exec("UPDATE posts SET likes = likes - 1 WHERE id = $1", id)
+		if err != nil {
+			return nil, gqlerror.Errorf("internal server error")
+		}
+
+		// Возвращаем обновленный пост
+		post := &model.Post{}
+		err = r.Models.Posts.DB.QueryRow("SELECT id, title, content, image_url, created_at, updated_at, likes FROM posts WHERE id = $1", id).Scan(
+			&post.ID, &post.Title, &post.Content, &post.ImageURL, &post.CreatedAt, &post.UpdatedAt, &post.Likes)
+		if err != nil {
+			return nil, gqlerror.Errorf("internal server error")
+		}
+
+		return post, nil
 	}
 
 	// Добавляем лайк в таблицу likes

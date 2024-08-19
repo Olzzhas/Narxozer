@@ -3,7 +3,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
 )
@@ -18,13 +17,22 @@ func (r *mutationResolver) CreateTopic(ctx context.Context, input model.CreateTo
 	topic := &model.Topic{
 		Title:    input.Title,
 		Content:  input.Content,
-		AuthorID: int(userID),
+		ImageURL: input.ImageURL,
+		Author:   &model.User{ID: int(userID)},
 	}
 
 	topic, err := r.Models.Topics.Insert(topic)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO redis
+	user, err := r.Models.Users.Get(int(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	topic.Author = user
 
 	return topic, nil
 }
@@ -40,24 +48,24 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id int, input model.
 	if err != nil {
 		return nil, err
 	}
-
-	if topic.AuthorID != int(userID) {
-		return nil, errors.New("unauthorized")
+	if topic == nil {
+		return nil, errors.New("topic not found")
 	}
 
-	if input.Title != nil {
-		topic.Title = *input.Title
-	}
-	if input.Content != nil {
-		topic.Content = *input.Content
+	if topic.Author.ID != int(userID) {
+		return nil, errors.New("you do not have permission to update this topic")
 	}
 
-	topic, err = r.Models.Topics.Update(topic)
+	topic.Title = *input.Title
+	topic.Content = *input.Content
+	topic.ImageURL = input.ImageURL
+
+	updatedTopic, err := r.Models.Topics.Update(topic)
 	if err != nil {
 		return nil, err
 	}
 
-	return topic, nil
+	return updatedTopic, nil
 }
 
 // DeleteTopic is the resolver for the deleteTopic field.
@@ -71,9 +79,13 @@ func (r *mutationResolver) DeleteTopic(ctx context.Context, id int) (bool, error
 	if err != nil {
 		return false, err
 	}
+	if topic == nil {
+		return false, errors.New("topic not found")
+	}
 
-	if topic.AuthorID != int(userID) {
-		return false, errors.New("unauthorized")
+	// Проверяем, является ли пользователь автором топика
+	if topic.Author.ID != int(userID) {
+		return false, errors.New("you do not have permission to delete this topic")
 	}
 
 	err = r.Models.Topics.Delete(id)
@@ -88,52 +100,49 @@ func (r *mutationResolver) DeleteTopic(ctx context.Context, id int) (bool, error
 func (r *mutationResolver) LikeTopic(ctx context.Context, id int) (*model.Topic, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 	if userID == 0 {
-		return nil, fmt.Errorf("unauthorized")
+		return nil, errors.New("unauthorized")
 	}
 
-	// Проверяем, не лайкнул ли уже этот пользователь данный пост
+	// Проверяем, лайкнул ли уже этот пользователь данный топик
 	var existingLike int
-	err := r.Models.Topics.DB.QueryRow("SELECT COUNT(*) FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'topic'", userID, id).Scan(&existingLike)
+	err := r.Models.Posts.DB.QueryRow("SELECT COUNT(*) FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'topic'", userID, id).Scan(&existingLike)
 	if err != nil {
 		return nil, err
 	}
 
 	if existingLike > 0 {
-		return nil, fmt.Errorf("you have already liked this post")
+		// Лайк уже существует, выполняем анлайк
+		_, err = r.Models.Posts.DB.Exec("DELETE FROM likes WHERE user_id = $1 AND entity_id = $2 AND entity_type = 'topic'", userID, id)
+		if err != nil {
+			return nil, err
+		}
+
+		// Уменьшаем счетчик лайков в таблице topics
+		_, err = r.Models.Posts.DB.Exec("UPDATE topics SET likes = likes - 1 WHERE id = $1", id)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Лайка нет, выполняем добавление лайка
+		_, err = r.Models.Posts.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'topic')", userID, id)
+		if err != nil {
+			return nil, err
+		}
+
+		// Увеличиваем счетчик лайков в таблице topics
+		_, err = r.Models.Posts.DB.Exec("UPDATE topics SET likes = likes + 1 WHERE id = $1", id)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Добавляем лайк в таблицу likes
-	_, err = r.Models.Topics.DB.Exec("INSERT INTO likes (user_id, entity_id, entity_type) VALUES ($1, $2, 'topic')", userID, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Увеличиваем счетчик лайков в таблице posts
-	_, err = r.Models.Topics.DB.Exec("UPDATE topics SET likes = likes + 1 WHERE id = $1", id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Возвращаем обновленный пост
-	topic := &model.Topic{}
-	err = r.Models.Posts.DB.QueryRow("SELECT id, title, content, author_id, created_at, updated_at, likes FROM posts WHERE id = $1", id).Scan(
-		&topic.ID, &topic.Title, &topic.Content, &topic.AuthorID, &topic.CreatedAt, &topic.UpdatedAt, &topic.Likes)
+	// Возвращаем обновленный топик
+	topic, err := r.Models.Topics.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
 	return topic, nil
-
-}
-
-// UpdateComment is the resolver for the updateComment field.
-func (r *mutationResolver) UpdateComment(ctx context.Context, id int, input model.UpdateCommentInput) (*model.Comment, error) {
-	panic(fmt.Errorf("not implemented: UpdateComment - updateComment"))
-}
-
-// DeleteComment is the resolver for the deleteComment field.
-func (r *mutationResolver) DeleteComment(ctx context.Context, id int) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteComment - deleteComment"))
 }
 
 // Topics is the resolver for the topics field.
@@ -142,6 +151,16 @@ func (r *queryResolver) Topics(ctx context.Context) ([]*model.Topic, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Загружаем авторов для каждого топика
+	for _, topic := range topics {
+		user, err := r.Models.Users.Get(topic.Author.ID)
+		if err != nil {
+			return nil, err
+		}
+		topic.Author = user
+	}
+
 	return topics, nil
 }
 
@@ -151,12 +170,35 @@ func (r *queryResolver) TopicByID(ctx context.Context, id int) (*model.Topic, er
 	if err != nil {
 		return nil, err
 	}
+	if topic == nil {
+		return nil, errors.New("topic not found")
+	}
+
+	// Загружаем автора топика
+	user, err := r.Models.Users.Get(topic.Author.ID)
+	if err != nil {
+		return nil, err
+	}
+	topic.Author = user
+
 	return topic, nil
 }
 
 // CommentsByTopicID is the resolver for the commentsByTopicId field.
 func (r *queryResolver) CommentsByTopicID(ctx context.Context, topicID int) ([]*model.Comment, error) {
-	// TODO implement
+	comments, err := r.Models.Comments.GetByEntityID(topicID, "topic")
+	if err != nil {
+		return nil, err
+	}
 
-	panic(fmt.Errorf("not implemented: CommentsByTopicID - commentsByTopicId"))
+	for _, comment := range comments {
+		// TODO redis
+		user, err := r.Models.Users.Get(comment.Author.ID)
+		if err != nil {
+			return nil, err
+		}
+		comment.Author = user
+	}
+
+	return comments, nil
 }

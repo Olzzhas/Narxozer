@@ -1,13 +1,11 @@
 package data
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/olzzhas/narxozer/internal/validator"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"time"
 )
 
@@ -26,6 +24,10 @@ type User struct {
 	LFKUrl    string    `json:"lfk_url"`
 	LFKAccess bool      `json:"lfk_access"`
 	Version   int       `json:"-"`
+}
+
+func (u User) IsAnonymous() bool {
+	return true
 }
 
 type password struct {
@@ -98,220 +100,35 @@ func ValidateUser(v *validator.Validator, user *User) {
 	}
 }
 
-func (m UserModel) Insert(user *model.User) error {
+func (m UserModel) GetAll() ([]*model.User, error) {
 	query := `
-		INSERT INTO users (name, lastname, email, password_hash, role)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, role
-	`
-
-	args := []any{user.Name, user.Lastname, user.Email, user.PasswordHash, user.Role}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.Role)
-
-	if err != nil {
-		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
-			return ErrDuplicateEmail
-		default:
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m UserModel) GetByEmail(email string) (*model.User, error) {
-	query := `
-		SELECT id,created_at,name,lastname,email,password_hash,role,image_url,degree, additional_information,major, course,faculty,updated_at
+		SELECT id, email, name, lastname, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
 		FROM users
-		WHERE email = $1
 	`
 
-	var user model.User
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, email).Scan(
-		&user.ID,
-		&user.CreatedAt,
-		&user.Name,
-		&user.Lastname,
-		&user.Email,
-		&user.PasswordHash,
-		&user.Role,
-		&user.ImageURL,
-		&user.Degree,
-		&user.AdditionalInformation,
-		&user.Course,
-		&user.Major,
-		&user.Faculty,
-		&user.UpdatedAt,
-	)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
-
-	return &user, nil
-}
-
-func (m UserModel) Get(id int64) (*User, error) {
-	query := `
-		SELECT id, created_at, name, surname, email, password_hash, activated, version, role, image_url, lfk_url, lfk_access
-		FROM users
-		WHERE id = $1
-	`
-
-	var user User
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&user.ID,
-		&user.CreatedAt,
-		&user.Name,
-		&user.Surname,
-		&user.Email,
-		&user.Password.hash,
-		&user.Activated,
-		&user.Version,
-		&user.Role,
-		&user.ImageUrl,
-		&user.LFKUrl,
-		&user.LFKAccess,
-	)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
-
-	return &user, nil
-}
-
-func (m UserModel) Update(user *User) error {
-	query := `
-		UPDATE users
-		SET name = $1, surname = $2, email = $3, password_hash = $4, activated = $5, version = version + 1, role = $8, image_url = $9
-		WHERE id = $6 AND version = $7
-		RETURNING version
-	`
-
-	args := []any{
-		user.Name,
-		user.Surname,
-		user.Email,
-		user.Password.hash,
-		user.Activated,
-		user.ID,
-		user.Version,
-		user.Role,
-		user.ImageUrl,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
-	if err != nil {
-		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
-			return ErrDuplicateEmail
-		case errors.Is(err, sql.ErrNoRows):
-			return ErrEditConflict
-		default:
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (u *User) IsAnonymous() bool {
-	return u == AnonymousUser
-}
-
-func (m UserModel) CheckUserExists(id int64) (bool, error) {
-	sqlStmt := `SELECT 1 FROM users WHERE id = $1`
-
-	stmt, err := m.DB.Prepare(sqlStmt)
-	if err != nil {
-		return false, err
-	}
-	defer func(stmt *sql.Stmt) {
-		err := stmt.Close()
-		if err != nil {
-			return
-		}
-	}(stmt)
-
-	row := stmt.QueryRow(id)
-
-	var exists bool
-	err = row.Scan(&exists)
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
-}
-
-func (m UserModel) FindAllByLesson(id int64) ([]*User, error) {
-	query := `
-		SELECT users.id, users.created_at, users.name, users.surname, users.email, users.activated, users.role, users.image_url, users.version, users.lfk_url, users.lfk_access
-        FROM lesson_registrations
-        JOIN users ON users.id = lesson_registrations.student_id
-        WHERE lesson_registrations.lesson_id = $1
-	`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
-	defer cancel()
-
-	rows, err := m.DB.QueryContext(ctx, query, id)
+	rows, err := m.DB.Query(query)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	//defer rows.Close()
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(rows)
-
-	var users []*User
-
+	var users []*model.User
 	for rows.Next() {
-		var user User
-
+		var user model.User
 		err := rows.Scan(
 			&user.ID,
-			&user.CreatedAt,
-			&user.Name,
-			&user.Surname,
 			&user.Email,
-			&user.Activated,
+			&user.Name,
+			&user.Lastname,
 			&user.Role,
-			&user.ImageUrl,
-			&user.Version,
-			&user.LFKUrl,
-			&user.LFKAccess,
+			&user.ImageURL,
+			&user.AdditionalInformation,
+			&user.Course,
+			&user.Major,
+			&user.Degree,
+			&user.Faculty,
+			&user.CreatedAt,
+			&user.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -324,4 +141,54 @@ func (m UserModel) FindAllByLesson(id int64) ([]*User, error) {
 	}
 
 	return users, nil
+}
+
+func (m UserModel) Get(id int) (*model.User, error) {
+	query := `
+		SELECT id, email, name, lastname, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
+		FROM users
+		WHERE id = $1
+	`
+
+	var user model.User
+	err := m.DB.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Name,
+		&user.Lastname,
+		&user.Role,
+		&user.ImageURL,
+		&user.AdditionalInformation,
+		&user.Course,
+		&user.Major,
+		&user.Degree,
+		&user.Faculty,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (m ClubModel) Update(id int, input model.UpdateClubInput) (*model.Club, error) {
+	query := `
+		UPDATE clubs
+		SET name = COALESCE($1, name), description = COALESCE($2, description), image_url = COALESCE($3, image_url)
+		WHERE id = $4
+		RETURNING id, name, description, image_url, creator_id, created_at`
+
+	club := &model.Club{}
+	err := m.DB.QueryRow(query, input.Name, input.Description, input.ImageURL, id).Scan(
+		&club.ID, &club.Name, &club.Description, &club.ImageURL, &club.Creator.ID, &club.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return club, nil
 }

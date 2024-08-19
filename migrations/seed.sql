@@ -1,5 +1,56 @@
-INSERT INTO users (email, name, lastname, password_hash, role, image_url, additional_information, course, major, degree, faculty) VALUES
-   ('testuser1@example.com', 'Test', 'User1', 'hashed_password_1', 'STUDENT', 'test', 'test', 4, 'test', 'test', 'test'),
-   ('testuser2@example.com', 'Test', 'User2', 'hashed_password_2', 'STUDENT', 'test', 'test', 4, 'test', 'test', 'test');
-
-
+-- -- Вставка тестовых данных для таблицы users
+-- INSERT INTO users (email, name, lastname, password_hash, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at)
+-- VALUES
+--     ('student1@example.com', 'John', 'Doe', '$2a$10$somethinghashed', 'STUDENT', 'https://example.com/images/johndoe.jpg', 'Some additional information', 1, 'Computer Science', 'Bachelor', 'Engineering', NOW(), NOW()),
+--     ('teacher1@example.com', 'Jane', 'Smith', '$2a$10$somethinghashed', 'TEACHER', 'https://example.com/images/janesmith.jpg', 'Additional info about Jane', NULL, 'Computer Science', 'PhD', 'Engineering', NOW(), NOW()),
+--     ('admin1@example.com', 'Alice', 'Johnson', '$2a$10$somethinghashed', 'ADMIN', 'https://example.com/images/alicejohnson.jpg', 'Admin additional information', NULL, 'Information Technology', 'Master', 'IT', NOW(), NOW());
+--
+-- -- Вставка тестовых данных для таблицы posts
+-- INSERT INTO posts (title, content, image_url, author_id, created_at, updated_at, likes)
+-- VALUES
+--     ('First Post', 'This is the content of the first post', 'https://example.com/images/post1.jpg', 1, NOW(), NOW(), 10),
+--     ('Second Post', 'This is the content of the second post', 'https://example.com/images/post2.jpg', 1, NOW(), NOW(), 5);
+--
+-- -- Вставка тестовых данных для таблицы comments
+-- INSERT INTO comments (content, image_url, entity_id, entity_type, author_id, parent_id, created_at, updated_at, likes)
+-- VALUES
+--     ('First comment on first post', 'https://example.com/images/comment1.jpg', 1, 'post', 2, NULL, NOW(), NOW(), 3),
+--     ('Second comment on first post', NULL, 1, 'post', 1, NULL, NOW(), NOW(), 2),
+--     ('Reply to first comment', NULL, 1, 'post', 3, 1, NOW(), NOW(), 1);
+--
+-- -- Вставка тестовых данных для таблицы clubs
+-- INSERT INTO clubs (name, description, image_url, creator_id, created_at)
+-- VALUES
+--     ('Chess Club', 'A club for chess enthusiasts', 'https://example.com/images/chessclub.jpg', 2, NOW()),
+--     ('Photography Club', 'For those who love photography', 'https://example.com/images/photoclub.jpg', 3, NOW());
+--
+-- -- Вставка тестовых данных для таблицы events
+-- INSERT INTO events (title, description, image_url, date, created_at, club_id)
+-- VALUES
+--     ('Chess Tournament', 'Annual chess tournament', 'https://example.com/images/chess_tournament.jpg', '2024-09-15 10:00:00', NOW(), 1),
+--     ('Photography Workshop', 'Learn the basics of photography', 'https://example.com/images/photoworkshop.jpg', '2024-09-20 14:00:00', NOW(), 2);
+--
+-- -- Вставка тестовых данных для таблицы topics
+-- INSERT INTO topics (title, content, image_url, author_id, created_at, updated_at, likes)
+-- VALUES
+--     ('First Topic', 'This is the content of the first topic', 'https://example.com/images/topic1.jpg', 1, NOW(), NOW(), 8),
+--     ('Second Topic', 'This is the content of the second topic', 'https://example.com/images/topic2.jpg', 2, NOW(), NOW(), 3);
+--
+-- -- Вставка тестовых данных для таблицы likes (для постов)
+-- INSERT INTO likes (user_id, entity_id, entity_type, created_at)
+-- VALUES
+--     (1, 1, 'post', NOW()),
+--     (2, 1, 'post', NOW()),
+--     (3, 1, 'post', NOW());
+--
+-- -- Вставка тестовых данных для таблицы likes (для комментариев)
+-- INSERT INTO likes (user_id, entity_id, entity_type, created_at)
+-- VALUES
+--     (1, 1, 'comment', NOW()),
+--     (2, 1, 'comment', NOW());
+--
+-- -- Вставка тестовых данных для таблицы likes (для тем)
+-- INSERT INTO likes (user_id, entity_id, entity_type, created_at)
+-- VALUES
+--     (1, 1, 'topic', NOW()),
+--     (2, 1, 'topic', NOW());

@@ -36,6 +36,7 @@ type Mutation {
   createClub(input: CreateClubInput!): Club!
   updateClub(id: Int!, input: UpdateClubInput!): Club!
   deleteClub(id: Int!): Boolean!
+  assignAdmin(clubId: Int!, userId: Int!): Club!
 
   createEvent(clubId: Int!, input: CreateEventInput!): Event!
   updateEvent(id: Int!, input: UpdateEventInput!): Event!
@@ -47,14 +48,14 @@ type Mutation {
   likeTopic(id: Int!): Topic!
   updateComment(id: Int!, input: UpdateCommentInput!): Comment!
   deleteComment(id: Int!): Boolean!
-
 }
 
 type Topic {
   id: Int!
   title: String!
   content: String!
-  authorId: Int!
+  imageURL: String
+  author: User!  # Заменили authorId на author
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -64,12 +65,13 @@ type Topic {
 input CreateTopicInput {
   title: String!
   content: String!
+  imageURL: String  # Добавлено поле imageURL
 }
-
 
 input UpdateTopicInput {
   title: String
   content: String
+  imageURL: String  # Добавлено поле imageURL
 }
 
 type Club {
@@ -84,20 +86,6 @@ type Club {
   admins: [User!]!
 }
 
-type Event {
-  id: Int!
-  title: String!
-  description: String!
-  createdAt: String!
-  date: String!
-  clubId: Int!
-}
-
-input UpdateEventInput {
-  title: String
-  description: String
-  date: String
-}
 input CreateClubInput {
   name: String!
   description: String!
@@ -105,16 +93,33 @@ input CreateClubInput {
 }
 
 input UpdateClubInput {
-  name: String
-  description: String
+  name: String!
+  description: String!
   imageURL: String
 }
 
+type Event {
+  id: Int!
+  title: String!
+  description: String!
+  imageURL: String  # Добавлено поле imageURL
+  createdAt: String!
+  date: String!
+  clubId: Int!
+}
 
 input CreateEventInput {
   title: String!
   description: String!
+  imageURL: String  # Добавлено поле imageURL
   date: String!
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  imageURL: String  # Добавлено поле imageURL
+  date: String
 }
 
 type Post {
@@ -122,7 +127,7 @@ type Post {
   title: String!
   content: String!
   imageURL: String
-  authorId: Int!
+  author: User!  # Заменили authorId на author
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -132,9 +137,10 @@ type Post {
 type Comment {
   id: Int!
   content: String!
+  imageURL: String  # Добавлено поле imageURL
   entityId: Int!
   entityType: String!
-  authorId: Int!
+  author: User!  # Заменили authorId на author
   parentId: Int
   createdAt: String!
   updatedAt: String
@@ -178,16 +184,24 @@ input UpdatePostInput {
   imageURL: String
 }
 
+enum EntityType {
+  post
+  topic
+  event
+}
+
 input CreateCommentInput {
   entityID: Int!
-  entityType: String!
+  entityType: EntityType!
   content: String!
+  imageURL: String
   authorId: Int!
   parentId: Int
 }
 
-input UpdateCommentInput{
+input UpdateCommentInput {
   content: String!
+  imageURL: String  # Добавлено поле imageURL
   authorId: Int!
   parentId: Int
 }
@@ -231,5 +245,3 @@ input RegisterInput {
   lastname: String!
   password: String!
 }
-
-

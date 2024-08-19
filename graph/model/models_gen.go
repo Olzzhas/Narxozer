@@ -28,9 +28,10 @@ type Club struct {
 type Comment struct {
 	ID         int        `json:"id"`
 	Content    string     `json:"content"`
+	ImageURL   *string    `json:"imageURL,omitempty"`
 	EntityID   int        `json:"entityId"`
 	EntityType string     `json:"entityType"`
-	AuthorID   int        `json:"authorId"`
+	Author     *User      `json:"author"`
 	ParentID   *int       `json:"parentId,omitempty"`
 	CreatedAt  string     `json:"createdAt"`
 	UpdatedAt  *string    `json:"updatedAt,omitempty"`
@@ -45,17 +46,19 @@ type CreateClubInput struct {
 }
 
 type CreateCommentInput struct {
-	EntityID   int    `json:"entityID"`
-	EntityType string `json:"entityType"`
-	Content    string `json:"content"`
-	AuthorID   int    `json:"authorId"`
-	ParentID   *int   `json:"parentId,omitempty"`
+	EntityID   int        `json:"entityID"`
+	EntityType EntityType `json:"entityType"`
+	Content    string     `json:"content"`
+	ImageURL   *string    `json:"imageURL,omitempty"`
+	AuthorID   int        `json:"authorId"`
+	ParentID   *int       `json:"parentId,omitempty"`
 }
 
 type CreateEventInput struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Date        string `json:"date"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	ImageURL    *string `json:"imageURL,omitempty"`
+	Date        string  `json:"date"`
 }
 
 type CreatePostInput struct {
@@ -66,8 +69,9 @@ type CreatePostInput struct {
 }
 
 type CreateTopicInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title    string  `json:"title"`
+	Content  string  `json:"content"`
+	ImageURL *string `json:"imageURL,omitempty"`
 }
 
 type CreateUserInput struct {
@@ -85,12 +89,13 @@ type CreateUserInput struct {
 }
 
 type Event struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"createdAt"`
-	Date        string `json:"date"`
-	ClubID      int    `json:"clubId"`
+	ID          int     `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	ImageURL    *string `json:"imageURL,omitempty"`
+	CreatedAt   string  `json:"createdAt"`
+	Date        string  `json:"date"`
+	ClubID      int     `json:"clubId"`
 }
 
 type Mutation struct {
@@ -101,7 +106,7 @@ type Post struct {
 	Title     string     `json:"title"`
 	Content   string     `json:"content"`
 	ImageURL  *string    `json:"imageURL,omitempty"`
-	AuthorID  int        `json:"authorId"`
+	Author    *User      `json:"author"`
 	CreatedAt string     `json:"createdAt"`
 	UpdatedAt *string    `json:"updatedAt,omitempty"`
 	Likes     int        `json:"likes"`
@@ -122,7 +127,8 @@ type Topic struct {
 	ID        int        `json:"id"`
 	Title     string     `json:"title"`
 	Content   string     `json:"content"`
-	AuthorID  int        `json:"authorId"`
+	ImageURL  *string    `json:"imageURL,omitempty"`
+	Author    *User      `json:"author"`
 	CreatedAt string     `json:"createdAt"`
 	UpdatedAt *string    `json:"updatedAt,omitempty"`
 	Likes     int        `json:"likes"`
@@ -130,20 +136,22 @@ type Topic struct {
 }
 
 type UpdateClubInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
 	ImageURL    *string `json:"imageURL,omitempty"`
 }
 
 type UpdateCommentInput struct {
-	Content  string `json:"content"`
-	AuthorID int    `json:"authorId"`
-	ParentID *int   `json:"parentId,omitempty"`
+	Content  string  `json:"content"`
+	ImageURL *string `json:"imageURL,omitempty"`
+	AuthorID int     `json:"authorId"`
+	ParentID *int    `json:"parentId,omitempty"`
 }
 
 type UpdateEventInput struct {
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
+	ImageURL    *string `json:"imageURL,omitempty"`
 	Date        *string `json:"date,omitempty"`
 }
 
@@ -154,8 +162,9 @@ type UpdatePostInput struct {
 }
 
 type UpdateTopicInput struct {
-	Title   *string `json:"title,omitempty"`
-	Content *string `json:"content,omitempty"`
+	Title    *string `json:"title,omitempty"`
+	Content  *string `json:"content,omitempty"`
+	ImageURL *string `json:"imageURL,omitempty"`
 }
 
 type UpdateUserInput struct {
@@ -187,6 +196,49 @@ type User struct {
 	Major                 *string `json:"major,omitempty"`
 	Degree                *string `json:"degree,omitempty"`
 	Faculty               *string `json:"faculty,omitempty"`
+}
+
+type EntityType string
+
+const (
+	EntityTypePost  EntityType = "post"
+	EntityTypeTopic EntityType = "topic"
+	EntityTypeEvent EntityType = "event"
+)
+
+var AllEntityType = []EntityType{
+	EntityTypePost,
+	EntityTypeTopic,
+	EntityTypeEvent,
+}
+
+func (e EntityType) IsValid() bool {
+	switch e {
+	case EntityTypePost, EntityTypeTopic, EntityTypeEvent:
+		return true
+	}
+	return false
+}
+
+func (e EntityType) String() string {
+	return string(e)
+}
+
+func (e *EntityType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EntityType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EntityType", str)
+	}
+	return nil
+}
+
+func (e EntityType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type Role string

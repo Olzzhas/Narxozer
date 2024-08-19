@@ -64,12 +64,13 @@ type ComplexityRoot struct {
 	}
 
 	Comment struct {
-		AuthorID   func(childComplexity int) int
+		Author     func(childComplexity int) int
 		Content    func(childComplexity int) int
 		CreatedAt  func(childComplexity int) int
 		EntityID   func(childComplexity int) int
 		EntityType func(childComplexity int) int
 		ID         func(childComplexity int) int
+		ImageURL   func(childComplexity int) int
 		Likes      func(childComplexity int) int
 		ParentID   func(childComplexity int) int
 		Replies    func(childComplexity int) int
@@ -82,10 +83,12 @@ type ComplexityRoot struct {
 		Date        func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
+		ImageURL    func(childComplexity int) int
 		Title       func(childComplexity int) int
 	}
 
 	Mutation struct {
+		AssignAdmin    func(childComplexity int, clubID int, userID int) int
 		CreateClub     func(childComplexity int, input model.CreateClubInput) int
 		CreateComment  func(childComplexity int, input model.CreateCommentInput) int
 		CreateEvent    func(childComplexity int, clubID int, input model.CreateEventInput) int
@@ -116,7 +119,7 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		AuthorID  func(childComplexity int) int
+		Author    func(childComplexity int) int
 		Comments  func(childComplexity int) int
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -141,11 +144,12 @@ type ComplexityRoot struct {
 	}
 
 	Topic struct {
-		AuthorID  func(childComplexity int) int
+		Author    func(childComplexity int) int
 		Comments  func(childComplexity int) int
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		ImageURL  func(childComplexity int) int
 		Likes     func(childComplexity int) int
 		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -188,6 +192,7 @@ type MutationResolver interface {
 	CreateClub(ctx context.Context, input model.CreateClubInput) (*model.Club, error)
 	UpdateClub(ctx context.Context, id int, input model.UpdateClubInput) (*model.Club, error)
 	DeleteClub(ctx context.Context, id int) (bool, error)
+	AssignAdmin(ctx context.Context, clubID int, userID int) (*model.Club, error)
 	CreateEvent(ctx context.Context, clubID int, input model.CreateEventInput) (*model.Event, error)
 	UpdateEvent(ctx context.Context, id int, input model.UpdateEventInput) (*model.Event, error)
 	DeleteEvent(ctx context.Context, id int) (bool, error)
@@ -307,12 +312,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Club.Name(childComplexity), true
 
-	case "Comment.authorId":
-		if e.complexity.Comment.AuthorID == nil {
+	case "Comment.author":
+		if e.complexity.Comment.Author == nil {
 			break
 		}
 
-		return e.complexity.Comment.AuthorID(childComplexity), true
+		return e.complexity.Comment.Author(childComplexity), true
 
 	case "Comment.content":
 		if e.complexity.Comment.Content == nil {
@@ -348,6 +353,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Comment.ID(childComplexity), true
+
+	case "Comment.imageURL":
+		if e.complexity.Comment.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.Comment.ImageURL(childComplexity), true
 
 	case "Comment.likes":
 		if e.complexity.Comment.Likes == nil {
@@ -412,12 +424,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Event.ID(childComplexity), true
 
+	case "Event.imageURL":
+		if e.complexity.Event.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.Event.ImageURL(childComplexity), true
+
 	case "Event.title":
 		if e.complexity.Event.Title == nil {
 			break
 		}
 
 		return e.complexity.Event.Title(childComplexity), true
+
+	case "Mutation.assignAdmin":
+		if e.complexity.Mutation.AssignAdmin == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_assignAdmin_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AssignAdmin(childComplexity, args["clubId"].(int), args["userId"].(int)), true
 
 	case "Mutation.createClub":
 		if e.complexity.Mutation.CreateClub == nil {
@@ -743,12 +774,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(int), args["input"].(model.UpdateUserInput)), true
 
-	case "Post.authorId":
-		if e.complexity.Post.AuthorID == nil {
+	case "Post.author":
+		if e.complexity.Post.Author == nil {
 			break
 		}
 
-		return e.complexity.Post.AuthorID(childComplexity), true
+		return e.complexity.Post.Author(childComplexity), true
 
 	case "Post.comments":
 		if e.complexity.Post.Comments == nil {
@@ -906,12 +937,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity), true
 
-	case "Topic.authorId":
-		if e.complexity.Topic.AuthorID == nil {
+	case "Topic.author":
+		if e.complexity.Topic.Author == nil {
 			break
 		}
 
-		return e.complexity.Topic.AuthorID(childComplexity), true
+		return e.complexity.Topic.Author(childComplexity), true
 
 	case "Topic.comments":
 		if e.complexity.Topic.Comments == nil {
@@ -940,6 +971,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Topic.ID(childComplexity), true
+
+	case "Topic.imageURL":
+		if e.complexity.Topic.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.Topic.ImageURL(childComplexity), true
 
 	case "Topic.likes":
 		if e.complexity.Topic.Likes == nil {
@@ -1216,6 +1254,7 @@ type Mutation {
   createClub(input: CreateClubInput!): Club!
   updateClub(id: Int!, input: UpdateClubInput!): Club!
   deleteClub(id: Int!): Boolean!
+  assignAdmin(clubId: Int!, userId: Int!): Club!
 
   createEvent(clubId: Int!, input: CreateEventInput!): Event!
   updateEvent(id: Int!, input: UpdateEventInput!): Event!
@@ -1227,14 +1266,14 @@ type Mutation {
   likeTopic(id: Int!): Topic!
   updateComment(id: Int!, input: UpdateCommentInput!): Comment!
   deleteComment(id: Int!): Boolean!
-
 }
 
 type Topic {
   id: Int!
   title: String!
   content: String!
-  authorId: Int!
+  imageURL: String
+  author: User!  # Заменили authorId на author
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -1244,12 +1283,13 @@ type Topic {
 input CreateTopicInput {
   title: String!
   content: String!
+  imageURL: String  # Добавлено поле imageURL
 }
-
 
 input UpdateTopicInput {
   title: String
   content: String
+  imageURL: String  # Добавлено поле imageURL
 }
 
 type Club {
@@ -1264,20 +1304,6 @@ type Club {
   admins: [User!]!
 }
 
-type Event {
-  id: Int!
-  title: String!
-  description: String!
-  createdAt: String!
-  date: String!
-  clubId: Int!
-}
-
-input UpdateEventInput {
-  title: String
-  description: String
-  date: String
-}
 input CreateClubInput {
   name: String!
   description: String!
@@ -1285,16 +1311,33 @@ input CreateClubInput {
 }
 
 input UpdateClubInput {
-  name: String
-  description: String
+  name: String!
+  description: String!
   imageURL: String
 }
 
+type Event {
+  id: Int!
+  title: String!
+  description: String!
+  imageURL: String  # Добавлено поле imageURL
+  createdAt: String!
+  date: String!
+  clubId: Int!
+}
 
 input CreateEventInput {
   title: String!
   description: String!
+  imageURL: String  # Добавлено поле imageURL
   date: String!
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  imageURL: String  # Добавлено поле imageURL
+  date: String
 }
 
 type Post {
@@ -1302,7 +1345,7 @@ type Post {
   title: String!
   content: String!
   imageURL: String
-  authorId: Int!
+  author: User!  # Заменили authorId на author
   createdAt: String!
   updatedAt: String
   likes: Int!
@@ -1312,9 +1355,10 @@ type Post {
 type Comment {
   id: Int!
   content: String!
+  imageURL: String  # Добавлено поле imageURL
   entityId: Int!
   entityType: String!
-  authorId: Int!
+  author: User!  # Заменили authorId на author
   parentId: Int
   createdAt: String!
   updatedAt: String
@@ -1358,16 +1402,24 @@ input UpdatePostInput {
   imageURL: String
 }
 
+enum EntityType {
+  post
+  topic
+  event
+}
+
 input CreateCommentInput {
   entityID: Int!
-  entityType: String!
+  entityType: EntityType!
   content: String!
+  imageURL: String
   authorId: Int!
   parentId: Int
 }
 
-input UpdateCommentInput{
+input UpdateCommentInput {
   content: String!
+  imageURL: String  # Добавлено поле imageURL
   authorId: Int!
   parentId: Int
 }
@@ -1411,8 +1463,6 @@ input RegisterInput {
   lastname: String!
   password: String!
 }
-
-
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1420,6 +1470,30 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_assignAdmin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["clubId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clubId"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["clubId"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["userId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createClub_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -2548,6 +2622,8 @@ func (ec *executionContext) fieldContext_Club_events(_ context.Context, field gr
 				return ec.fieldContext_Event_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Event_description(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Event_imageURL(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Event_createdAt(ctx, field)
 			case "date":
@@ -2723,6 +2799,47 @@ func (ec *executionContext) fieldContext_Comment_content(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Comment_imageURL(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_imageURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Comment_imageURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Comment_entityId(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_entityId(ctx, field)
 	if err != nil {
@@ -2811,8 +2928,8 @@ func (ec *executionContext) fieldContext_Comment_entityType(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_authorId(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Comment_authorId(ctx, field)
+func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_author(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2825,7 +2942,7 @@ func (ec *executionContext) _Comment_authorId(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuthorID, nil
+		return obj.Author, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2837,19 +2954,49 @@ func (ec *executionContext) _Comment_authorId(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Comment_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Comment_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Comment",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "lastname":
+				return ec.fieldContext_User_lastname(ctx, field)
+			case "passwordHash":
+				return ec.fieldContext_User_passwordHash(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_User_imageURL(ctx, field)
+			case "additionalInformation":
+				return ec.fieldContext_User_additionalInformation(ctx, field)
+			case "course":
+				return ec.fieldContext_User_course(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "major":
+				return ec.fieldContext_User_major(ctx, field)
+			case "degree":
+				return ec.fieldContext_User_degree(ctx, field)
+			case "faculty":
+				return ec.fieldContext_User_faculty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -3068,12 +3215,14 @@ func (ec *executionContext) fieldContext_Comment_replies(_ context.Context, fiel
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -3211,6 +3360,47 @@ func (ec *executionContext) _Event_description(ctx context.Context, field graphq
 }
 
 func (ec *executionContext) fieldContext_Event_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Event_imageURL(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Event_imageURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Event_imageURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Event",
 		Field:      field,
@@ -3402,8 +3592,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_Post_content(ctx, field)
 			case "imageURL":
 				return ec.fieldContext_Post_imageURL(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Post_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -3477,8 +3667,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePost(ctx context.Context
 				return ec.fieldContext_Post_content(ctx, field)
 			case "imageURL":
 				return ec.fieldContext_Post_imageURL(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Post_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -3607,8 +3797,8 @@ func (ec *executionContext) fieldContext_Mutation_likePost(ctx context.Context, 
 				return ec.fieldContext_Post_content(ctx, field)
 			case "imageURL":
 				return ec.fieldContext_Post_imageURL(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Post_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -3678,12 +3868,14 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -3755,12 +3947,14 @@ func (ec *executionContext) fieldContext_Mutation_likeComment(ctx context.Contex
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -3832,12 +4026,14 @@ func (ec *executionContext) fieldContext_Mutation_replyToComment(ctx context.Con
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -4629,6 +4825,81 @@ func (ec *executionContext) fieldContext_Mutation_deleteClub(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_assignAdmin(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_assignAdmin(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AssignAdmin(rctx, fc.Args["clubId"].(int), fc.Args["userId"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Club)
+	fc.Result = res
+	return ec.marshalNClub2ᚖgithubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐClub(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_assignAdmin(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Club_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Club_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Club_description(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Club_imageURL(ctx, field)
+			case "creator":
+				return ec.fieldContext_Club_creator(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Club_createdAt(ctx, field)
+			case "members":
+				return ec.fieldContext_Club_members(ctx, field)
+			case "events":
+				return ec.fieldContext_Club_events(ctx, field)
+			case "admins":
+				return ec.fieldContext_Club_admins(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Club", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_assignAdmin_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createEvent(ctx, field)
 	if err != nil {
@@ -4674,6 +4945,8 @@ func (ec *executionContext) fieldContext_Mutation_createEvent(ctx context.Contex
 				return ec.fieldContext_Event_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Event_description(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Event_imageURL(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Event_createdAt(ctx, field)
 			case "date":
@@ -4743,6 +5016,8 @@ func (ec *executionContext) fieldContext_Mutation_updateEvent(ctx context.Contex
 				return ec.fieldContext_Event_title(ctx, field)
 			case "description":
 				return ec.fieldContext_Event_description(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Event_imageURL(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Event_createdAt(ctx, field)
 			case "date":
@@ -4867,8 +5142,10 @@ func (ec *executionContext) fieldContext_Mutation_createTopic(ctx context.Contex
 				return ec.fieldContext_Topic_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Topic_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Topic_authorId(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Topic_imageURL(ctx, field)
+			case "author":
+				return ec.fieldContext_Topic_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
@@ -4940,8 +5217,10 @@ func (ec *executionContext) fieldContext_Mutation_updateTopic(ctx context.Contex
 				return ec.fieldContext_Topic_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Topic_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Topic_authorId(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Topic_imageURL(ctx, field)
+			case "author":
+				return ec.fieldContext_Topic_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
@@ -5068,8 +5347,10 @@ func (ec *executionContext) fieldContext_Mutation_likeTopic(ctx context.Context,
 				return ec.fieldContext_Topic_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Topic_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Topic_authorId(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Topic_imageURL(ctx, field)
+			case "author":
+				return ec.fieldContext_Topic_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
@@ -5139,12 +5420,14 @@ func (ec *executionContext) fieldContext_Mutation_updateComment(ctx context.Cont
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -5401,8 +5684,8 @@ func (ec *executionContext) fieldContext_Post_imageURL(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_authorId(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Post_authorId(ctx, field)
+func (ec *executionContext) _Post_author(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_author(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5415,7 +5698,7 @@ func (ec *executionContext) _Post_authorId(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuthorID, nil
+		return obj.Author, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5427,19 +5710,49 @@ func (ec *executionContext) _Post_authorId(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Post_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Post_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Post",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "lastname":
+				return ec.fieldContext_User_lastname(ctx, field)
+			case "passwordHash":
+				return ec.fieldContext_User_passwordHash(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_User_imageURL(ctx, field)
+			case "additionalInformation":
+				return ec.fieldContext_User_additionalInformation(ctx, field)
+			case "course":
+				return ec.fieldContext_User_course(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "major":
+				return ec.fieldContext_User_major(ctx, field)
+			case "degree":
+				return ec.fieldContext_User_degree(ctx, field)
+			case "faculty":
+				return ec.fieldContext_User_faculty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -5617,12 +5930,14 @@ func (ec *executionContext) fieldContext_Post_comments(_ context.Context, field 
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -5687,8 +6002,8 @@ func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field gr
 				return ec.fieldContext_Post_content(ctx, field)
 			case "imageURL":
 				return ec.fieldContext_Post_imageURL(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Post_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -5748,8 +6063,8 @@ func (ec *executionContext) fieldContext_Query_postById(ctx context.Context, fie
 				return ec.fieldContext_Post_content(ctx, field)
 			case "imageURL":
 				return ec.fieldContext_Post_imageURL(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Post_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -5819,12 +6134,14 @@ func (ec *executionContext) fieldContext_Query_comments(ctx context.Context, fie
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -6190,8 +6507,10 @@ func (ec *executionContext) fieldContext_Query_topics(_ context.Context, field g
 				return ec.fieldContext_Topic_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Topic_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Topic_authorId(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Topic_imageURL(ctx, field)
+			case "author":
+				return ec.fieldContext_Topic_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
@@ -6249,8 +6568,10 @@ func (ec *executionContext) fieldContext_Query_topicById(ctx context.Context, fi
 				return ec.fieldContext_Topic_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Topic_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Topic_authorId(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Topic_imageURL(ctx, field)
+			case "author":
+				return ec.fieldContext_Topic_author(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
@@ -6320,12 +6641,14 @@ func (ec *executionContext) fieldContext_Query_commentsByTopicId(ctx context.Con
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -6615,8 +6938,8 @@ func (ec *executionContext) fieldContext_Topic_content(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Topic_authorId(ctx context.Context, field graphql.CollectedField, obj *model.Topic) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Topic_authorId(ctx, field)
+func (ec *executionContext) _Topic_imageURL(ctx context.Context, field graphql.CollectedField, obj *model.Topic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Topic_imageURL(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6629,7 +6952,48 @@ func (ec *executionContext) _Topic_authorId(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuthorID, nil
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Topic_imageURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Topic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Topic_author(ctx context.Context, field graphql.CollectedField, obj *model.Topic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Topic_author(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Author, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6641,19 +7005,49 @@ func (ec *executionContext) _Topic_authorId(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Topic_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Topic_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Topic",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "lastname":
+				return ec.fieldContext_User_lastname(ctx, field)
+			case "passwordHash":
+				return ec.fieldContext_User_passwordHash(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_User_imageURL(ctx, field)
+			case "additionalInformation":
+				return ec.fieldContext_User_additionalInformation(ctx, field)
+			case "course":
+				return ec.fieldContext_User_course(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "major":
+				return ec.fieldContext_User_major(ctx, field)
+			case "degree":
+				return ec.fieldContext_User_degree(ctx, field)
+			case "faculty":
+				return ec.fieldContext_User_faculty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -6831,12 +7225,14 @@ func (ec *executionContext) fieldContext_Topic_comments(_ context.Context, field
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Comment_imageURL(ctx, field)
 			case "entityId":
 				return ec.fieldContext_Comment_entityId(ctx, field)
 			case "entityType":
 				return ec.fieldContext_Comment_entityType(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Comment_authorId(ctx, field)
+			case "author":
+				return ec.fieldContext_Comment_author(ctx, field)
 			case "parentId":
 				return ec.fieldContext_Comment_parentId(ctx, field)
 			case "createdAt":
@@ -9270,7 +9666,7 @@ func (ec *executionContext) unmarshalInputCreateCommentInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"entityID", "entityType", "content", "authorId", "parentId"}
+	fieldsInOrder := [...]string{"entityID", "entityType", "content", "imageURL", "authorId", "parentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9286,7 +9682,7 @@ func (ec *executionContext) unmarshalInputCreateCommentInput(ctx context.Context
 			it.EntityID = data
 		case "entityType":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("entityType"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNEntityType2githubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐEntityType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9298,6 +9694,13 @@ func (ec *executionContext) unmarshalInputCreateCommentInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		case "authorId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorId"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
@@ -9325,7 +9728,7 @@ func (ec *executionContext) unmarshalInputCreateEventInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "date"}
+	fieldsInOrder := [...]string{"title", "description", "imageURL", "date"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9346,6 +9749,13 @@ func (ec *executionContext) unmarshalInputCreateEventInput(ctx context.Context, 
 				return it, err
 			}
 			it.Description = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		case "date":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("date"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -9414,7 +9824,7 @@ func (ec *executionContext) unmarshalInputCreateTopicInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "content"}
+	fieldsInOrder := [...]string{"title", "content", "imageURL"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9435,6 +9845,13 @@ func (ec *executionContext) unmarshalInputCreateTopicInput(ctx context.Context, 
 				return it, err
 			}
 			it.Content = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		}
 	}
 
@@ -9602,14 +10019,14 @@ func (ec *executionContext) unmarshalInputUpdateClubInput(ctx context.Context, o
 		switch k {
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
 		case "description":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9634,7 +10051,7 @@ func (ec *executionContext) unmarshalInputUpdateCommentInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "authorId", "parentId"}
+	fieldsInOrder := [...]string{"content", "imageURL", "authorId", "parentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9648,6 +10065,13 @@ func (ec *executionContext) unmarshalInputUpdateCommentInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		case "authorId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorId"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
@@ -9675,7 +10099,7 @@ func (ec *executionContext) unmarshalInputUpdateEventInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "date"}
+	fieldsInOrder := [...]string{"title", "description", "imageURL", "date"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9696,6 +10120,13 @@ func (ec *executionContext) unmarshalInputUpdateEventInput(ctx context.Context, 
 				return it, err
 			}
 			it.Description = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		case "date":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("date"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -9757,7 +10188,7 @@ func (ec *executionContext) unmarshalInputUpdateTopicInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "content"}
+	fieldsInOrder := [...]string{"title", "content", "imageURL"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9778,6 +10209,13 @@ func (ec *executionContext) unmarshalInputUpdateTopicInput(ctx context.Context, 
 				return it, err
 			}
 			it.Content = data
+		case "imageURL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ImageURL = data
 		}
 	}
 
@@ -10030,6 +10468,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "imageURL":
+			out.Values[i] = ec._Comment_imageURL(ctx, field, obj)
 		case "entityId":
 			out.Values[i] = ec._Comment_entityId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10040,8 +10480,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "authorId":
-			out.Values[i] = ec._Comment_authorId(ctx, field, obj)
+		case "author":
+			out.Values[i] = ec._Comment_author(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -10113,6 +10553,8 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "imageURL":
+			out.Values[i] = ec._Event_imageURL(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Event_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10296,6 +10738,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "assignAdmin":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_assignAdmin(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createEvent":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createEvent(ctx, field)
@@ -10410,8 +10859,8 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "imageURL":
 			out.Values[i] = ec._Post_imageURL(ctx, field, obj)
-		case "authorId":
-			out.Values[i] = ec._Post_authorId(ctx, field, obj)
+		case "author":
+			out.Values[i] = ec._Post_author(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -10739,8 +11188,10 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "authorId":
-			out.Values[i] = ec._Topic_authorId(ctx, field, obj)
+		case "imageURL":
+			out.Values[i] = ec._Topic_imageURL(ctx, field, obj)
+		case "author":
+			out.Values[i] = ec._Topic_author(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -11366,6 +11817,16 @@ func (ec *executionContext) unmarshalNCreateTopicInput2githubᚗcomᚋolzzhasᚋ
 func (ec *executionContext) unmarshalNCreateUserInput2githubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v interface{}) (model.CreateUserInput, error) {
 	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNEntityType2githubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐEntityType(ctx context.Context, v interface{}) (model.EntityType, error) {
+	var res model.EntityType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEntityType2githubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐEntityType(ctx context.Context, sel ast.SelectionSet, v model.EntityType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNEvent2githubᚗcomᚋolzzhasᚋnarxozerᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v model.Event) graphql.Marshaler {

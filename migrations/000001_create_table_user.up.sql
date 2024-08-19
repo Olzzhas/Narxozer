@@ -1,16 +1,16 @@
 CREATE TABLE users (
        id SERIAL PRIMARY KEY,
-       email TEXT NOT NULL UNIQUE,
-       name TEXT NOT NULL,
-       lastname TEXT NOT NULL,
-       password_hash TEXT NOT NULL,
-       role VARCHAR(10) NOT NULL CHECK (role IN ('STUDENT', 'TEACHER', 'ADMIN')),
+       email VARCHAR(255) NOT NULL UNIQUE,
+       name VARCHAR(255) NOT NULL,
+       lastname VARCHAR(255) NOT NULL,
+       password_hash VARCHAR(255) NOT NULL,
+       role VARCHAR(50) NOT NULL,
        image_url TEXT,
        additional_information TEXT,
-       course INT CHECK (course >= 1 AND course <= 4),
-       major TEXT,
-       degree TEXT,
-       faculty TEXT,
-       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-       updated_at TIMESTAMPTZ
+       course INT,
+       major VARCHAR(255),
+       degree VARCHAR(255),
+       faculty VARCHAR(255),
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

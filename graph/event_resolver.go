@@ -21,6 +21,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, clubID int, input mo
 	event := &model.Event{
 		Title:       input.Title,
 		Description: input.Description,
+		ImageURL:    input.ImageURL,
 		Date:        input.Date,
 		ClubID:      clubID,
 	}
@@ -59,6 +60,9 @@ func (r *mutationResolver) UpdateEvent(ctx context.Context, id int, input model.
 	}
 	if input.Date != nil {
 		event.Date = *input.Date
+	}
+	if input.ImageURL != nil {
+		event.ImageURL = input.ImageURL
 	}
 
 	event, err = r.Models.Events.Update(event)

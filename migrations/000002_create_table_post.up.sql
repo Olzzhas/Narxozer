@@ -1,23 +1,25 @@
 CREATE TABLE posts (
        id SERIAL PRIMARY KEY,
-       title TEXT NOT NULL,
+       title VARCHAR(255) NOT NULL,
        content TEXT NOT NULL,
        image_url TEXT,
-       author_id INT NOT NULL,
-       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-       updated_at TIMESTAMPTZ,
+       author_id INT NOT NULL REFERENCES users(id),
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
        likes INT DEFAULT 0
 );
 
 CREATE TABLE comments (
       id SERIAL PRIMARY KEY,
-      entity_id INTEGER NOT NULL,
-        entity_type TEXT NOT NULL CHECK (entity_type IN ('post', 'topic')),
       content TEXT NOT NULL,
-      author_id INT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      likes INT DEFAULT 0,
-      parent_comment_id INT REFERENCES comments(id) ON DELETE CASCADE
+      image_url TEXT,
+      entity_id INT NOT NULL,
+      entity_type VARCHAR(50) NOT NULL,
+      author_id INT NOT NULL REFERENCES users(id),
+      parent_id INT REFERENCES comments(id) ON DELETE CASCADE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      likes INT DEFAULT 0
 );
 
 

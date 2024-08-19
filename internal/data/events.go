@@ -11,12 +11,12 @@ type EventModel struct {
 
 func (m EventModel) Insert(event *model.Event) (*model.Event, error) {
 	query := `
-		INSERT INTO events (title, description, date, club_id)
+		INSERT INTO events (title, description, date, club_id, image_url)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
 	`
 
-	args := []interface{}{event.Title, event.Description, event.Date, event.ClubID}
+	args := []interface{}{event.Title, event.Description, event.Date, event.ClubID, event.ImageURL}
 
 	err := m.DB.QueryRow(query, args...).Scan(&event.ID, &event.CreatedAt)
 	if err != nil {
@@ -54,10 +54,10 @@ func (m EventModel) GetByID(id int) (*model.Event, error) {
 func (m EventModel) Update(event *model.Event) (*model.Event, error) {
 	query := `
 		UPDATE events
-		SET title = $1, description = $2, date = $3
-		WHERE id = $4`
+		SET title = $1, description = $2, date = $3, image_url = $4
+		WHERE id = $5`
 
-	args := []interface{}{event.Title, event.Description, event.Date}
+	args := []interface{}{event.Title, event.Description, event.Date, event.ImageURL, event.ID}
 
 	_, err := m.DB.Exec(query, args...)
 	if err != nil {

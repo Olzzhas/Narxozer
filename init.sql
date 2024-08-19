@@ -5,7 +5,7 @@ CREATE USER myuser WITH PASSWORD 'mypassword';
 CREATE DATABASE mydatabase;
 
 -- Назначение прав доступа к базе данных для пользователя
-GRANT ALL PRIVILEGES ON DATABAS E mydatabase TO myuser;
+GRANT ALL PRIVILEGES ON DATABASE mydatabase TO myuser;
 
 -- Даем все права на схемы и таблицы в базе данных
 \c mydatabase;

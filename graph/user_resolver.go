@@ -23,10 +23,20 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int) (bool, error)
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	return []*model.User{}, nil
+	users, err := r.Models.Users.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // UserByID is the resolver for the userById field.
 func (r *queryResolver) UserByID(ctx context.Context, id int) (*model.User, error) {
-	return &model.User{}, nil
+	user, err := r.Models.Users.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
