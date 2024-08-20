@@ -103,8 +103,7 @@ func main() {
 
 	redisClient, err := redisConnect()
 	if err != nil {
-		//logger.PrintFatal(err, nil)
-		fmt.Println("redis connection failed")
+		logger.PrintFatal(err, nil)
 	}
 
 	logger.PrintInfo("redis connection established", nil)
@@ -117,7 +116,7 @@ func main() {
 
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
-		//log.Fatalf("failed to create client: %v", err)
+		// log.Fatalf("failed to create client: %v", err)
 		logger.PrintInfo("google storage connection failed", nil)
 	}
 
@@ -173,8 +172,8 @@ func main() {
 		config:     cfg,
 		logger:     logger,
 		jwtManager: jwtManager,
-		models:     data.NewModels(db),
-		resolver:   graph.NewResolver(data.NewModels(db), logger),
+		models:     data.NewModels(db, redisClient),
+		resolver:   graph.NewResolver(data.NewModels(db, redisClient), logger),
 		storages:   data.NewStorages(storageClient),
 		redis:      redisClient,
 		mailer:     mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
@@ -215,7 +214,7 @@ func openDB(cfg config) (*sql.DB, error) {
 // TODO add to config
 func redisConnect() (*redis.Client, error) {
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis:6379",
 		Password: "",
 		DB:       0,
 	})

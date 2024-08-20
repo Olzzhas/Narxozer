@@ -3,11 +3,13 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"github.com/go-redis/redis/v8"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
 type PostModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func (m PostModel) Insert(post *model.Post) (*model.Post, error) {

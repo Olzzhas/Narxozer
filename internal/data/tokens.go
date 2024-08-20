@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"errors"
+	"github.com/go-redis/redis/v8"
 	"github.com/olzzhas/narxozer/internal/validator"
 	"time"
 )
@@ -25,7 +26,8 @@ type Token struct {
 }
 
 type TokenModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func ValidateToken(v *validator.Validator, refreshToken string) {

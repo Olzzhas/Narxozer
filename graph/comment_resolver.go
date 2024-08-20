@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateComment is the resolver for the createComment field.
@@ -29,10 +30,10 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 		return nil, err
 	}
 
-	//TODO redis
-	user, err := r.Models.Users.Get(comment.Author.ID)
+	user, err := r.Models.Users.GetCached(comment.Author.ID)
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	comment.Author = user
@@ -61,10 +62,10 @@ func (r *mutationResolver) ReplyToComment(ctx context.Context, commentID int, in
 		return nil, err
 	}
 
-	//TODO redis
-	user, err := r.Models.Users.Get(comment.Author.ID)
+	user, err := r.Models.Users.GetCached(comment.Author.ID)
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	comment.Author = user

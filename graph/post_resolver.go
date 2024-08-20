@@ -22,12 +22,11 @@ func (r *queryResolver) PostByID(ctx context.Context, id int) (*model.Post, erro
 		return nil, gqlerror.Errorf("post not found")
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(post.Author.ID)
+	user, err := r.Models.Users.GetCached(post.Author.ID)
 	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
 		return nil, gqlerror.Errorf("internal server error")
 	}
-
 	post.Author = user
 
 	return post, nil
@@ -42,8 +41,7 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	}
 
 	for _, post := range posts {
-		//TODO redis
-		user, err := r.Models.Users.Get(post.Author.ID)
+		user, err := r.Models.Users.GetCached(post.Author.ID)
 		if err != nil {
 			r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
 			return nil, gqlerror.Errorf("internal server error")
@@ -74,9 +72,9 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 		return nil, gqlerror.Errorf("internal server error")
 	}
 
-	//TODO redis
-	user, err := r.Models.Users.Get(post.Author.ID)
+	user, err := r.Models.Users.GetCached(post.Author.ID)
 	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
 		return nil, gqlerror.Errorf("internal server error")
 	}
 
@@ -119,9 +117,9 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 		return nil, gqlerror.Errorf("internal server error")
 	}
 
-	//TODO redis
-	user, err := r.Models.Users.Get(post.Author.ID)
+	user, err := r.Models.Users.GetCached(post.Author.ID)
 	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
 		return nil, gqlerror.Errorf("internal server error")
 	}
 
@@ -147,9 +145,9 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (bool, error)
 		return false, gqlerror.Errorf("post not found")
 	}
 
-	//TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
 		return false, gqlerror.Errorf("internal server error")
 	}
 

@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"github.com/go-redis/redis/v8"
 )
 
 var (
@@ -22,16 +23,16 @@ type Models struct {
 	Comments            CommentModel
 }
 
-func NewModels(db *sql.DB) Models {
+func NewModels(db *sql.DB, redis *redis.Client) Models {
 	return Models{
-		Permissions:         PermissionModel{DB: db},
-		Users:               UserModel{DB: db},
-		Tokens:              TokenModel{DB: db},
-		AuthorizationTokens: AuthorizationTokenModel{DB: db},
-		Posts:               PostModel{DB: db},
-		Clubs:               ClubModel{DB: db},
-		Events:              EventModel{DB: db},
-		Topics:              TopicModel{DB: db},
-		Comments:            CommentModel{DB: db},
+		Permissions:         PermissionModel{DB: db, Redis: redis},
+		Users:               UserModel{DB: db, Redis: redis},
+		Tokens:              TokenModel{DB: db, Redis: redis},
+		AuthorizationTokens: AuthorizationTokenModel{DB: db, Redis: redis},
+		Posts:               PostModel{DB: db, Redis: redis},
+		Clubs:               ClubModel{DB: db, Redis: redis},
+		Events:              EventModel{DB: db, Redis: redis},
+		Topics:              TopicModel{DB: db, Redis: redis},
+		Comments:            CommentModel{DB: db, Redis: redis},
 	}
 }

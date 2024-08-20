@@ -1,8 +1,12 @@
 package data
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/olzzhas/narxozer/internal/validator"
 	"golang.org/x/crypto/bcrypt"
@@ -40,7 +44,8 @@ var (
 )
 
 type UserModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func (p *password) Set(plaintextPassword string) error {
@@ -171,6 +176,43 @@ func (m UserModel) GetAll() ([]*model.User, error) {
 	return users, nil
 }
 
+func (m UserModel) GetCached(userID int) (*model.User, error) {
+	cacheKey := fmt.Sprintf("user:%d", userID)
+
+	// Пытаемся получить данные из кеша Redis
+	val, err := m.Redis.Get(context.Background(), cacheKey).Result()
+	if err == redis.Nil {
+		// Данные не найдены в кеше, загружаем из базы данных
+		user, err := m.Get(userID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Сохраняем данные в кеш Redis
+		data, err := json.Marshal(user)
+		if err != nil {
+			return nil, err
+		}
+		err = m.Redis.Set(context.Background(), cacheKey, data, 10*time.Minute).Err()
+		if err != nil {
+			return nil, err
+		}
+
+		return user, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Если данные найдены в кеше, десериализуем их и возвращаем
+	var user model.User
+	err = json.Unmarshal([]byte(val), &user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (m UserModel) Get(id int) (*model.User, error) {
 	query := `
 		SELECT id, email, name, lastname, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
@@ -239,20 +281,62 @@ func (m UserModel) GetByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
-func (m ClubModel) Update(id int, input model.UpdateClubInput) (*model.Club, error) {
+func (m UserModel) Update(id int, input model.UpdateUserInput) (*model.User, error) {
 	query := `
-		UPDATE clubs
-		SET name = COALESCE($1, name), description = COALESCE($2, description), image_url = COALESCE($3, image_url)
-		WHERE id = $4
-		RETURNING id, name, description, image_url, creator_id, created_at`
+		UPDATE users
+		SET 
+			email = COALESCE(NULLIF($1, ''), email),
+			name = COALESCE(NULLIF($2, ''), name),
+			lastname = COALESCE(NULLIF($3, ''), lastname),
+			password_hash = COALESCE(NULLIF($4, ''), password_hash),
+			role = COALESCE($5, role),
+			image_url = COALESCE($6, image_url),
+			additional_information = COALESCE($7, additional_information),
+			course = COALESCE($8, course),
+			major = COALESCE($9, major),
+			degree = COALESCE($10, degree),
+			faculty = COALESCE($11, faculty),
+			updated_at = now()
+		WHERE id = $12
+		RETURNING id, email, name, lastname, password_hash, role, image_url, additional_information, course, major, degree, faculty, created_at, updated_at
+	`
 
-	club := &model.Club{}
-	club.Creator = &model.User{}
-	err := m.DB.QueryRow(query, input.Name, input.Description, input.ImageURL, id).Scan(
-		&club.ID, &club.Name, &club.Description, &club.ImageURL, &club.Creator.ID, &club.CreatedAt)
+	user := &model.User{}
+	err := m.DB.QueryRow(query,
+		input.Email,
+		input.Name,
+		input.Lastname,
+		input.Password,
+		input.Role,
+		input.ImageURL,
+		input.AdditionalInformation,
+		input.Course,
+		input.Major,
+		input.Degree,
+		input.Faculty,
+		id,
+	).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Name,
+		&user.Lastname,
+		&user.PasswordHash,
+		&user.Role,
+		&user.ImageURL,
+		&user.AdditionalInformation,
+		&user.Course,
+		&user.Major,
+		&user.Degree,
+		&user.Faculty,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
 		return nil, err
 	}
 
-	return club, nil
+	return user, nil
 }

@@ -2,11 +2,13 @@ package data
 
 import (
 	"database/sql"
+	"github.com/go-redis/redis/v8"
 	"github.com/olzzhas/narxozer/graph/model"
 )
 
 type EventModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func (m EventModel) Insert(event *model.Event) (*model.Event, error) {

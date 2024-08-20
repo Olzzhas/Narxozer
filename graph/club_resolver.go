@@ -2,10 +2,13 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"time"
 )
 
 // JoinClub is the resolver for the joinClub field.
@@ -20,7 +23,34 @@ func (r *mutationResolver) JoinClub(ctx context.Context, clubID int) (*model.Clu
 		return nil, err
 	}
 
-	return r.Models.Clubs.GetByID(clubID)
+	// Получаем обновленный список членов клуба
+	members, err := r.Models.Clubs.GetMembers(clubID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Обновляем кеш в Redis
+	cacheKey := fmt.Sprintf("club:%d:members", clubID)
+	data, err := json.Marshal(members)
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while marshaling club members: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	err = r.Models.Clubs.Redis.Set(ctx, cacheKey, data, 10*time.Minute).Err()
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while updating cache: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	// Возвращаем обновленные данные о клубе
+	club, err := r.Models.Clubs.GetCachedByID(clubID)
+	if err != nil {
+		return nil, err
+	}
+	club.Members = members
+
+	return club, nil
 }
 
 func (r *mutationResolver) LeaveClub(ctx context.Context, clubID int) (*model.Club, error) {
@@ -38,11 +68,33 @@ func (r *mutationResolver) LeaveClub(ctx context.Context, clubID int) (*model.Cl
 		return nil, errors.New("failed to remove member from club")
 	}
 
-	// TODO redis
-	club, err := r.Models.Clubs.GetByID(clubID)
+	// Получаем обновленный список членов клуба
+	members, err := r.Models.Clubs.GetMembers(clubID)
 	if err != nil {
 		return nil, err
 	}
+
+	// Обновляем кеш в Redis
+	cacheKey := fmt.Sprintf("club:%d:members", clubID)
+	data, err := json.Marshal(members)
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while marshaling club members: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	err = r.Models.Clubs.Redis.Set(ctx, cacheKey, data, 10*time.Minute).Err()
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while updating cache: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	// Возвращаем обновленные данные о клубе
+	club, err := r.Models.Clubs.GetCachedByID(clubID)
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while getting club: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+	club.Members = members
 
 	return club, nil
 }
@@ -71,9 +123,10 @@ func (r *mutationResolver) CreateClub(ctx context.Context, input model.CreateClu
 		return nil, err
 	}
 
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	newClub.Creator = user
@@ -98,13 +151,28 @@ func (r *mutationResolver) UpdateClub(ctx context.Context, id int, input model.U
 		return nil, err
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	club.Creator = user
+
+	// Обновляем данные в кеше Redis
+	cacheKey := fmt.Sprintf("club:%d", id)
+	data, err := json.Marshal(club)
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while marshaling club data: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
+	err = r.Models.Clubs.Redis.Set(ctx, cacheKey, data, 10*time.Minute).Err()
+	if err != nil {
+		r.Logger.PrintError(fmt.Errorf("error while updating cache: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
+	}
+
 	return club, nil
 }
 
@@ -150,9 +218,9 @@ func (r *queryResolver) Clubs(ctx context.Context) ([]*model.Club, error) {
 		return nil, err
 	}
 	for _, club := range clubs {
-		// TODO redis
-		members, err := r.Models.Clubs.GetMembers(club.ID)
+		members, err := r.Models.Clubs.GetCachedMembers(club.ID)
 		if err != nil {
+			r.Logger.PrintError(fmt.Errorf("error while getting club members: %v", err), nil)
 			return nil, gqlerror.Errorf("internal server error")
 		}
 		club.Members = members
@@ -163,18 +231,19 @@ func (r *queryResolver) Clubs(ctx context.Context) ([]*model.Club, error) {
 
 // ClubByID is the resolver for the clubById field.
 func (r *queryResolver) ClubByID(ctx context.Context, id int) (*model.Club, error) {
-	club, err := r.Models.Clubs.GetByID(id)
+	club, err := r.Models.Clubs.GetCachedByID(id)
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting club: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
-	// TODO redis
-	members, err := r.Models.Clubs.GetMembers(club.ID)
+	members, err := r.Models.Clubs.GetCachedMembers(club.ID)
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting club members: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
-
 	club.Members = members
+
 	return club, nil
 
 }
@@ -201,10 +270,10 @@ func (r *mutationResolver) AssignAdmin(ctx context.Context, clubID int, userID i
 		return nil, err
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(club.Creator.ID)
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	club.Creator = user

@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"github.com/go-redis/redis/v8"
 	"github.com/lib/pq"
 	"time"
 )
@@ -20,7 +21,8 @@ func (p Permissions) Include(code string) bool {
 }
 
 type PermissionModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func (m PermissionModel) GetAllForUser(userID int64) (Permissions, error) {

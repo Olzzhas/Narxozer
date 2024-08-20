@@ -3,8 +3,10 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/olzzhas/narxozer/graph/middleware"
 	"github.com/olzzhas/narxozer/graph/model"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateTopic is the resolver for the createTopic field.
@@ -26,10 +28,10 @@ func (r *mutationResolver) CreateTopic(ctx context.Context, input model.CreateTo
 		return nil, err
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	topic.Author = user
@@ -65,10 +67,10 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id int, input model.
 		return nil, err
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	updatedTopic.Author = user
@@ -163,10 +165,10 @@ func (r *mutationResolver) LikeTopic(ctx context.Context, id int) (*model.Topic,
 		return nil, err
 	}
 
-	// TODO redis
-	user, err := r.Models.Users.Get(int(userID))
+	user, err := r.Models.Users.GetCached(int(userID))
 	if err != nil {
-		return nil, err
+		r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+		return nil, gqlerror.Errorf("internal server error")
 	}
 
 	topic.Author = user
@@ -221,10 +223,10 @@ func (r *queryResolver) CommentsByTopicID(ctx context.Context, topicID int) ([]*
 	}
 
 	for _, comment := range comments {
-		// TODO redis
-		user, err := r.Models.Users.Get(comment.Author.ID)
+		user, err := r.Models.Users.GetCached(comment.Author.ID)
 		if err != nil {
-			return nil, err
+			r.Logger.PrintError(fmt.Errorf("error while getting user: %v", err), nil)
+			return nil, gqlerror.Errorf("internal server error")
 		}
 		comment.Author = user
 	}

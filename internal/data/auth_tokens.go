@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis/v8"
 	"os"
 	"time"
 )
@@ -16,7 +17,8 @@ type AuthorizationToken struct {
 }
 
 type AuthorizationTokenModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 type CustomClaims struct {

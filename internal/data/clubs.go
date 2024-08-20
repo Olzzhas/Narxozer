@@ -1,14 +1,19 @@
 package data
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/lib/pq"
 	"github.com/olzzhas/narxozer/graph/model"
+	"time"
 )
 
 type ClubModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 func (m ClubModel) Insert(club *model.Club, id int) (*model.Club, error) {
@@ -64,6 +69,42 @@ func (m ClubModel) GetAll() ([]*model.Club, error) {
 
 	return clubs, nil
 }
+func (m ClubModel) GetCachedMembers(clubID int) ([]*model.User, error) {
+	cacheKey := fmt.Sprintf("club:%d:members", clubID)
+
+	// Пытаемся получить данные из кеша Redis
+	val, err := m.Redis.Get(context.Background(), cacheKey).Result()
+	if err == redis.Nil {
+		// Данные не найдены в кеше, загружаем из базы данных
+		members, err := m.GetMembers(clubID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Сохраняем данные в кеш Redis
+		data, err := json.Marshal(members)
+		if err != nil {
+			return nil, err
+		}
+		err = m.Redis.Set(context.Background(), cacheKey, data, 10*time.Minute).Err()
+		if err != nil {
+			return nil, err
+		}
+
+		return members, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Если данные найдены в кеше, десериализуем их и возвращаем
+	var members []*model.User
+	err = json.Unmarshal([]byte(val), &members)
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
 
 func (m ClubModel) GetMembers(clubID int) ([]*model.User, error) {
 	query := `
@@ -100,6 +141,43 @@ func (m ClubModel) GetMembers(clubID int) ([]*model.User, error) {
 	}
 
 	return members, nil
+}
+
+func (m ClubModel) GetCachedByID(clubID int) (*model.Club, error) {
+	cacheKey := fmt.Sprintf("club:%d", clubID)
+
+	// Пытаемся получить данные из кеша Redis
+	val, err := m.Redis.Get(context.Background(), cacheKey).Result()
+	if err == redis.Nil {
+		// Данные не найдены в кеше, загружаем из базы данных
+		club, err := m.GetByID(clubID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Сохраняем данные в кеш Redis
+		data, err := json.Marshal(club)
+		if err != nil {
+			return nil, err
+		}
+		err = m.Redis.Set(context.Background(), cacheKey, data, 10*time.Minute).Err()
+		if err != nil {
+			return nil, err
+		}
+
+		return club, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Если данные найдены в кеше, десериализуем их и возвращаем
+	var club model.Club
+	err = json.Unmarshal([]byte(val), &club)
+	if err != nil {
+		return nil, err
+	}
+
+	return &club, nil
 }
 
 func (m ClubModel) GetByID(id int) (*model.Club, error) {
@@ -222,4 +300,22 @@ func (m ClubModel) AddAdmin(clubID, userID int) error {
 	query := `INSERT INTO club_admins (club_id, user_id) VALUES ($1, $2)`
 	_, err := m.DB.Exec(query, clubID, userID)
 	return err
+}
+
+func (m ClubModel) Update(id int, input model.UpdateClubInput) (*model.Club, error) {
+	query := `
+		UPDATE clubs
+		SET name = COALESCE($1, name), description = COALESCE($2, description), image_url = COALESCE($3, image_url)
+		WHERE id = $4
+		RETURNING id, name, description, image_url, creator_id, created_at`
+
+	club := &model.Club{}
+	club.Creator = &model.User{}
+	err := m.DB.QueryRow(query, input.Name, input.Description, input.ImageURL, id).Scan(
+		&club.ID, &club.Name, &club.Description, &club.ImageURL, &club.Creator.ID, &club.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return club, nil
 }

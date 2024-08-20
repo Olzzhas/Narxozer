@@ -23,13 +23,7 @@ type Mutation {
   likeComment(id: Int!): Comment!
   replyToComment(commentId: Int!, input: CreateCommentInput!): Comment!
 
-  createUser(input: CreateUserInput!): User!
   updateUser(id: Int!, input: UpdateUserInput!): User!
-  deleteUser(id: Int!): Boolean!
-
-  login(email: String!, password: String!): AuthPayload!
-  register(input: RegisterInput!): AuthPayload!
-  refreshToken(refreshToken: String!): AuthPayload!
 
   joinClub(clubId: Int!): Club!
   leaveClub(clubId: Int!): Club!
